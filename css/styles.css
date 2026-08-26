@@ -57,41 +57,58 @@ body {
 }
 
 header.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding: 18px 12px 8px;
+  width: 100%;
+  padding: 18px 16px 8px;
 }
 
 header.hero .eyebrow {
-  letter-spacing: 0.42em;
+  width: 100%;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
   font-size: 11px;
   color: var(--gold);
   text-transform: uppercase;
 }
 
 header.hero h1 {
+  width: 100%;
   font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
-  font-size: clamp(32px, 5vw, 52px);
+  font-size: clamp(28px, 6vw, 52px);
   font-weight: 400;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
+  text-indent: 0.16em;
   color: var(--gold-bright);
   text-shadow: 0 0 24px rgba(214, 177, 90, 0.28);
   margin: 8px 0 4px;
 }
 
 header.hero p {
+  width: 100%;
   color: var(--ink-dim);
   font-size: 13px;
   letter-spacing: 0.08em;
+  text-indent: 0.08em;
 }
 
 .stats-bar {
-  display: flex;
-  justify-content: center;
-  gap: 22px;
-  flex-wrap: wrap;
-  margin: 16px 0 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(560px, 100%);
+  gap: 8px 10px;
+  margin: 16px auto 8px;
   color: var(--ink-dim);
   font-size: 12px;
+  text-align: center;
+  justify-content: center;
+}
+
+.stats-bar .stat {
+  display: block;
+  min-width: 0;
 }
 
 .stats-bar b {
@@ -186,9 +203,9 @@ header.hero p {
   gap: 16px;
 }
 
-.bag-col { grid-area: bag; }
-.forge { grid-area: forge; }
-.side { grid-area: side; }
+.layout .bag-col { grid-area: bag; }
+.layout .forge { grid-area: forge; }
+.layout .side { grid-area: side; }
 
 .bag-hint-phone { display: none; }
 
@@ -314,22 +331,24 @@ button.btn:disabled {
 
 .bag-hint { font-size: 11px; margin-bottom: 10px; }
 
-.craft-box {
-  margin-top: 14px;
-  border: 1px solid var(--line);
-  padding: 8px 10px 10px;
-  background: rgba(0, 0, 0, 0.18);
+.craft-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "form bag";
+  gap: 20px;
+  align-items: start;
 }
 
-.craft-box summary {
-  cursor: pointer;
-  color: var(--gold);
-  letter-spacing: 0.16em;
-  font-size: 13px;
-  padding: 6px 0 10px;
-}
+.craft-page .craft-form { grid-area: form; min-width: 0; }
+.craft-page .bag-col { grid-area: bag; min-width: 0; }
 
-.craft-box[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+.craft-next {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
 
 .inventory {
   display: grid;
@@ -1147,6 +1166,108 @@ footer.note {
   outline: 1px solid var(--gold);
 }
 
+.socket-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 8px;
+}
+
+.socket-empty .btn {
+  min-width: 96px;
+}
+
+.stone-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.stone-picker.show {
+  display: flex;
+}
+
+.stone-picker-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 5, 10, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.stone-picker-panel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  height: min(80vh, 760px);
+  max-height: min(80vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(28, 24, 36, 0.98), rgba(10, 9, 14, 0.98));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 28px rgba(214, 177, 90, 0.12);
+  padding: 16px 16px 12px;
+}
+
+.stone-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.stone-picker-head h2 {
+  font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  margin: 0;
+}
+
+.stone-picker-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.stone-picker-filters .btn.active {
+  border-color: var(--gold);
+  color: var(--gold-bright);
+  background: rgba(214, 177, 90, 0.12);
+}
+
+.stone-picker-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 2px 2px 8px;
+}
+
+.stone-picker-list .stone {
+  cursor: pointer;
+  overflow: visible;
+  height: auto;
+}
+
+body.picker-open {
+  overflow: hidden;
+}
+
 @media (max-width: 1100px) {
   .layout {
     grid-template-columns: 1fr;
@@ -1154,6 +1275,11 @@ footer.note {
       "forge"
       "bag"
       "side";
+  }
+
+  .stats-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(400px, 100%);
   }
 }
 
@@ -1191,30 +1317,33 @@ footer.note {
   }
 
   header.hero {
-    padding: 10px 8px 4px;
-    padding-right: 88px;
+    padding: 12px 8px 4px;
   }
 
   header.hero .eyebrow {
-    letter-spacing: 0.18em;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
     font-size: 10px;
   }
 
   header.hero h1 {
-    font-size: 28px;
-    letter-spacing: 0.08em;
+    font-size: clamp(24px, 8vw, 30px);
+    letter-spacing: 0.1em;
+    text-indent: 0.1em;
     margin: 6px 0 2px;
   }
 
   header.hero p {
     font-size: 12px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
+    text-indent: 0.04em;
   }
 
   .stats-bar {
-    gap: 10px 14px;
-    margin: 10px 0 4px;
-    justify-content: flex-start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(360px, 100%);
+    gap: 8px 12px;
+    margin: 12px auto 6px;
   }
 
   .sfx-toggle {
@@ -1229,8 +1358,8 @@ footer.note {
     position: sticky;
     top: 0;
     z-index: 16;
-    justify-content: stretch;
-    gap: 4px;
+    justify-content: center;
+    gap: 6px;
     margin: 10px -12px 12px;
     padding: 8px 12px;
     background: rgba(7, 6, 12, 0.92);
@@ -1239,7 +1368,7 @@ footer.note {
   }
 
   .tabs button {
-    flex: 1 1 0;
+    flex: 0 1 calc(33.333% - 6px);
     padding: 10px 2px;
     letter-spacing: 0.04em;
     font-size: 12px;
@@ -1320,6 +1449,13 @@ footer.note {
     padding-right: 52px;
   }
 
+  .craft-page {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "form"
+      "bag";
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -1376,14 +1512,15 @@ footer.note {
   }
 
   .fuse-reveal {
-    padding: 12px;
-    align-items: flex-end;
+    padding: 16px;
+    align-items: center;
+    justify-content: center;
   }
 
   .fuse-reveal-card {
-    width: 100%;
+    width: min(440px, 100%);
     padding: 16px 14px 12px;
-    max-height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 32px);
     overflow: auto;
   }
 
@@ -1409,5 +1546,23 @@ footer.note {
   footer.note {
     letter-spacing: 0.04em;
     padding: 0 8px;
+  }
+
+  .stone-picker {
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .stone-picker-panel {
+    width: min(560px, 100%);
+    height: min(78dvh, 720px);
+    max-height: min(78dvh, 720px);
+    padding: 14px;
+  }
+
+  .stone-picker-head h2 {
+    font-size: 18px;
+    letter-spacing: 0.1em;
   }
 }

@@ -20,65 +20,93 @@
       <h1>星源石合成器</h1>
       <p>自定义胚子 · 合成 · 洗练 · 锤炼 · 玉玺演算</p>
       <div class="stats-bar">
-        <span>合成 <b id="stat-fuses">0</b> 次</span>
-        <span>玉玺 <b id="stat-seals">0</b> 颗</span>
-        <span>四起源 <b id="stat-origins">0</b> 颗</span>
-        <span>背包 <b id="stat-bag">0</b></span>
+        <span class="stat">合成 <b id="stat-fuses">0</b> 次</span>
+        <span class="stat">玉玺 <b id="stat-seals">0</b> 颗</span>
+        <span class="stat">四起源 <b id="stat-origins">0</b> 颗</span>
+        <span class="stat">背包 <b id="stat-bag">0</b> 颗</span>
       </div>
     </header>
     <div class="ornament"></div>
 
     <nav class="tabs">
-      <button class="active" data-tab="forge">合成</button>
-      <button data-tab="calc">概率演算</button>
+      <button class="active" data-tab="craft">打造</button>
+      <button data-tab="forge">合成</button>
+      <button data-tab="calc">演算</button>
       <button data-tab="wash">洗练</button>
       <button data-tab="hammer">锤炼</button>
       <button data-tab="rules">规则</button>
     </nav>
 
-    <section id="panel-forge" class="panel active">
-      <div class="layout">
+    <section id="panel-craft" class="panel active">
+      <div class="craft-page">
+        <div class="craft-form">
+          <h2>打造胚子</h2>
+          <p class="hint">先在这里做出星源石，放入背包后再去合成、洗练或锤炼。每个槽都会生成一条词条；没改过的槽会随机补一条 T3～T7、不带皇冠的词条。</p>
+          <div class="form-grid">
+            <label>品级
+              <select id="custom-grade">
+                <option value="rare">稀有 · 最多 2 词条</option>
+                <option value="artifact">神器 · 最多 3 词条</option>
+                <option value="epic" selected>史诗 · 最多 4 词条</option>
+              </select>
+            </label>
+            <label>星序
+              <select id="custom-star"></select>
+            </label>
+          </div>
+          <div id="custom-slots" class="custom-slots"></div>
+          <div class="btn-row">
+            <button class="btn gold" id="btn-custom">放入背包</button>
+            <button class="btn" id="btn-batch-epic1">生成 100 颗 1 史诗技攻</button>
+            <button class="btn" id="btn-batch-epic2">生成 10 颗 2 史诗技攻</button>
+            <button class="btn" id="btn-batch-epic3">生成 10 颗 3 史诗技攻</button>
+            <button class="btn" id="btn-batch-epic4">生成 10 颗 4 史诗技攻</button>
+          </div>
+          <div class="btn-row craft-next">
+            <button type="button" class="btn gold" data-go-tab="forge">去做合成</button>
+            <button type="button" class="btn" data-go-tab="wash">去洗练</button>
+            <button type="button" class="btn" data-go-tab="hammer">去锤炼</button>
+          </div>
+        </div>
         <div class="col bag-col">
           <div class="bag-head">
             <h2>源石背包</h2>
-            <span id="bag-summary" class="bag-summary"></span>
+            <span class="bag-summary"></span>
           </div>
           <div class="bag-toolbar">
-            <div class="bag-filters" id="bag-filters">
+            <div class="bag-filters">
               <button type="button" class="btn active" data-bag-filter="all">全部</button>
               <button type="button" class="btn" data-bag-filter="treasure">珍品</button>
               <button type="button" class="btn" data-bag-filter="seal">玉玺</button>
             </div>
-            <button type="button" class="btn" id="btn-clear-slots">卸下双石</button>
-            <button type="button" class="btn danger" id="btn-clear">清空</button>
+            <button type="button" class="btn" data-clear-slots>卸下双石</button>
+            <button type="button" class="btn danger" data-clear-bag>清空</button>
           </div>
-          <p class="hint bag-hint bag-hint-desk">单击设为目标，再点一次取消。Shift+单击设为材料。也可直接拖到右侧祭坛。</p>
-          <p class="hint bag-hint bag-hint-phone">点「设为目标 / 设为材料」。选中的石会出现在上方祭坛。</p>
+          <p class="hint bag-hint">放入后可在这里查看、分解，或设为合成目标 / 材料。</p>
+          <div class="inventory"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-forge" class="panel">
+      <div class="layout">
+        <div class="col bag-col">
+          <div class="bag-head">
+            <h2>源石背包</h2>
+            <span class="bag-summary"></span>
+          </div>
+          <div class="bag-toolbar">
+            <div class="bag-filters">
+              <button type="button" class="btn active" data-bag-filter="all">全部</button>
+              <button type="button" class="btn" data-bag-filter="treasure">珍品</button>
+              <button type="button" class="btn" data-bag-filter="seal">玉玺</button>
+            </div>
+            <button type="button" class="btn" data-clear-slots>卸下双石</button>
+            <button type="button" class="btn danger" data-clear-bag>清空</button>
+          </div>
+          <p class="hint bag-hint bag-hint-desk">单击设为目标，再点一次取消。Shift+单击设为材料。也可点祭坛槽位弹出背包选择，或直接拖到祭坛。</p>
+          <p class="hint bag-hint bag-hint-phone">点祭坛槽位从背包里选，或点「设为目标 / 设为材料」。</p>
           <div id="inventory" class="inventory"></div>
-          <details class="craft-box" open>
-            <summary>打造胚子</summary>
-            <div class="form-grid">
-              <label>品级
-                <select id="custom-grade">
-                  <option value="rare">稀有 · 最多 2 词条</option>
-                  <option value="artifact">神器 · 最多 3 词条</option>
-                  <option value="epic" selected>史诗 · 最多 4 词条</option>
-                </select>
-              </label>
-              <label>星序
-                <select id="custom-star"></select>
-              </label>
-            </div>
-            <p class="hint">每个槽都会生成一条词条。没改过的槽会随机补一条 T3～T7、不带皇冠的词条。</p>
-            <div id="custom-slots" class="custom-slots"></div>
-            <div class="btn-row">
-              <button class="btn gold" id="btn-custom">放入背包</button>
-              <button class="btn" id="btn-batch-epic1">生成 100 颗 1 史诗技攻</button>
-              <button class="btn" id="btn-batch-epic2">生成 10 颗 2 史诗技攻</button>
-              <button class="btn" id="btn-batch-epic3">生成 10 颗 3 史诗技攻</button>
-              <button class="btn" id="btn-batch-epic4">生成 10 颗 4 史诗技攻</button>
-            </div>
-          </details>
         </div>
 
         <div class="forge">
@@ -300,6 +328,21 @@
     <footer class="note">非官方模拟器 · 用于理解合成手感与概率 · 地下城与勇士</footer>
   </div>
 
+  <div class="stone-picker" id="stone-picker" hidden>
+    <div class="stone-picker-backdrop" data-picker-close></div>
+    <div class="stone-picker-panel" role="dialog" aria-modal="true" aria-labelledby="stone-picker-title">
+      <div class="stone-picker-head">
+        <h2 id="stone-picker-title">选择星源石</h2>
+        <button type="button" class="btn" id="stone-picker-close">关闭</button>
+      </div>
+      <div class="stone-picker-filters" id="stone-picker-filters">
+        <button type="button" class="btn active" data-picker-filter="all">全部</button>
+        <button type="button" class="btn" data-picker-filter="treasure">珍品</button>
+        <button type="button" class="btn" data-picker-filter="seal">玉玺</button>
+      </div>
+      <div id="stone-picker-list" class="stone-picker-list"></div>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
   <div class="fuse-reveal" id="fuse-reveal"></div>
   <div class="seal-flash" id="seal-flash"><div class="seal-mark">玉玺</div></div>

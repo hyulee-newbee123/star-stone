@@ -11,6 +11,8 @@ const state = {
   fusing: false,
   hammering: false,
   bagFilter: "all",
+  pickerSlot: null,
+  pickerFilter: "all",
 };
 
 function $(sel, root = document) {
@@ -156,37 +158,37 @@ function bagVisible() {
 }
 
 function renderBag() {
-  const box = $("#inventory");
-  const summary = $("#bag-summary");
   const t = findStone(state.targetId);
   const m = findStone(state.matId);
-  if (summary) {
-    const bits = [`${state.bag.length} 颗`];
-    if (t) bits.push("已选目标");
-    if (m) bits.push("已选材料");
-    summary.textContent = bits.join(" · ");
-  }
-  $$("#bag-filters [data-bag-filter]").forEach((btn) => {
+  const bits = [`${state.bag.length} 颗`];
+  if (t) bits.push("已选目标");
+  if (m) bits.push("已选材料");
+  $$(".bag-summary").forEach((el) => {
+    el.textContent = bits.join(" · ");
+  });
+  $$(".bag-filters [data-bag-filter]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.bagFilter === state.bagFilter);
   });
+  let html;
   if (!state.bag.length) {
-    box.innerHTML = `<div class="empty">背包空空如也 · 先在下方打造一颗胚子</div>`;
-    return;
+    html = `<div class="empty">背包空空如也 · 先打造一颗胚子</div>`;
+  } else {
+    const list = bagVisible();
+    html = list.length
+      ? list
+          .map((s) =>
+            stoneHTML(s, {
+              actions: true,
+              selectedTarget: s.id === state.targetId,
+              selectedMat: s.id === state.matId,
+            })
+          )
+          .join("")
+      : `<div class="empty">当前筛选下没有星源石</div>`;
   }
-  const list = bagVisible();
-  if (!list.length) {
-    box.innerHTML = `<div class="empty">当前筛选下没有星源石</div>`;
-    return;
-  }
-  box.innerHTML = list
-    .map((s) =>
-      stoneHTML(s, {
-        actions: true,
-        selectedTarget: s.id === state.targetId,
-        selectedMat: s.id === state.matId,
-      })
-    )
-    .join("");
+  $$(".inventory").forEach((box) => {
+    box.innerHTML = html;
+  });
 }
 
 function renderSockets() {
@@ -194,10 +196,10 @@ function renderSockets() {
   const m = findStone(state.matId);
   $("#socket-target").innerHTML = t
     ? stoneHTML(t, { canDrop: true, selectedTarget: true })
-    : `<div class="empty">从背包指定目标石<br>结果继承其品级与星序</div>`;
+    : `<div class="empty socket-empty"><span>从背包指定目标石<br>结果继承其品级与星序</span><button type="button" class="btn gold socket-pick">选择</button></div>`;
   $("#socket-mat").innerHTML = m
     ? stoneHTML(m, { canDrop: true, selectedMat: true })
-    : `<div class="empty">从背包指定材料石<br>词条并入抽取池</div>`;
+    : `<div class="empty socket-empty"><span>从背包指定材料石<br>词条并入抽取池</span><button type="button" class="btn gold socket-pick">选择</button></div>`;
 
   if (t && m) renderLiveOdds(t, m);
   else $("#live-odds").innerHTML = `<div class="hint">放入双石后，这里会显示本次合成的技攻分布。</div>`;
@@ -285,6 +287,74 @@ function toggleMat(id) {
   setMat(id);
 }
 
+function pickerVisible() {
+  return state.bag.filter((s) => {
+    if (state.pickerFilter === "treasure") return s.treasure;
+    if (state.pickerFilter === "seal") return s.seal;
+    return true;
+  });
+}
+
+function openStonePicker(slot) {
+  state.pickerSlot = slot;
+  state.pickerFilter = "all";
+  const box = $("#stone-picker");
+  if (!box) return;
+  box.hidden = false;
+  box.classList.add("show");
+  document.body.classList.add("picker-open");
+  renderStonePicker();
+  sfx("tab");
+}
+
+function closeStonePicker() {
+  state.pickerSlot = null;
+  const box = $("#stone-picker");
+  if (!box) return;
+  box.classList.remove("show");
+  box.hidden = true;
+  document.body.classList.remove("picker-open");
+}
+
+function renderStonePicker() {
+  const title = $("#stone-picker-title");
+  const list = $("#stone-picker-list");
+  if (!title || !list || !state.pickerSlot) return;
+  title.textContent = state.pickerSlot === "target" ? "选择目标石" : "选择材料石";
+  $$("#stone-picker-filters [data-picker-filter]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.pickerFilter === state.pickerFilter);
+  });
+  if (!state.bag.length) {
+    list.innerHTML = `<div class="empty">背包是空的 · 先到「打造」页做一颗胚子</div>`;
+    return;
+  }
+  const stones = pickerVisible();
+  if (!stones.length) {
+    list.innerHTML = `<div class="empty">当前筛选下没有星源石</div>`;
+    return;
+  }
+  list.innerHTML = stones
+    .map((s) =>
+      stoneHTML(s, {
+        selectedTarget: s.id === state.targetId,
+        selectedMat: s.id === state.matId,
+      })
+    )
+    .join("");
+}
+
+let pickerDrag = { y: 0, moved: false };
+
+function switchTab(tab) {
+  const panel = $(`#panel-${tab}`);
+  if (!panel) return;
+  $$(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  $$(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${tab}`));
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    $(".tabs")?.scrollIntoView({ block: "start" });
+  }
+}
+
 function refresh() {
   renderBag();
   renderSockets();
@@ -345,7 +415,7 @@ function doBatchEpicSkill(count, skillN) {
   stones.forEach((s) => addStone(s));
   state.targetId = stones[0].id;
   sfx("batch");
-  toast(`已放入 ${count} 颗 ${skillN} 史诗技攻随机石`);
+  toast(`已放入 ${count} 颗 ${skillN} 史诗技攻随机石，可去合成或锤炼`);
   refresh();
 }
 
@@ -360,7 +430,7 @@ function doCustom() {
   addStone(stone);
   if (isHammerCandidate(stone)) state.targetId = stone.id;
   sfx("craft");
-  toast(isHammerCandidate(stone) ? "已放入背包，可在锤炼页直接锻打" : "已将自定义胚子放入背包");
+  toast(isHammerCandidate(stone) ? "已放入背包，可去锤炼页锻打" : "已放入背包，可去合成或洗练");
   refresh();
 }
 
@@ -877,7 +947,10 @@ function bind() {
     Sfx.unlock();
   };
   document.addEventListener("pointerdown", unlockAudio);
-  document.addEventListener("keydown", unlockAudio);
+  document.addEventListener("keydown", (e) => {
+    unlockAudio();
+    if (e.key === "Escape" && state.pickerSlot) closeStonePicker();
+  });
   document.addEventListener("click", (e) => {
     if (e.target.closest("#btn-sfx")) return;
     if (e.target.closest("button, .btn, .tabs button")) sfx("click");
@@ -890,25 +963,21 @@ function bind() {
     if (e.target.matches("input[type='checkbox']")) sfx("check");
   });
 
-  if (window.matchMedia("(max-width: 720px)").matches) {
-    const craft = $(".craft-box");
-    if (craft) craft.open = false;
-  }
-
   $$(".tabs button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      $$(".tabs button").forEach((b) => b.classList.remove("active"));
-      $$(".panel").forEach((p) => p.classList.remove("active"));
-      btn.classList.add("active");
-      $(`#panel-${btn.dataset.tab}`).classList.add("active");
+      switchTab(btn.dataset.tab);
       sfx("tab");
-      if (window.matchMedia("(max-width: 720px)").matches) {
-        $(".tabs")?.scrollIntoView({ block: "start" });
-      }
     });
   });
 
-  $("#inventory").addEventListener("click", (e) => {
+  $$("[data-go-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchTab(btn.dataset.goTab);
+      sfx("tab");
+    });
+  });
+
+  const onBagClick = (e) => {
     const btn = e.target.closest("[data-act]");
     if (btn) {
       const id = btn.dataset.id;
@@ -926,27 +995,62 @@ function bind() {
     if (!card) return;
     if (e.shiftKey) toggleMat(card.dataset.id);
     else toggleTarget(card.dataset.id);
-  });
-
-  $("#inventory").addEventListener("dragstart", (e) => {
-    const card = e.target.closest("[data-id]");
-    if (!card) return;
-    e.dataTransfer.setData("text/plain", card.dataset.id);
-    e.dataTransfer.effectAllowed = "move";
-    card.classList.add("dragging");
-    sfx("drag");
-  });
-  $("#inventory").addEventListener("dragend", (e) => {
-    e.target.closest("[data-id]")?.classList.remove("dragging");
+  };
+  $$(".inventory").forEach((box) => {
+    box.addEventListener("click", onBagClick);
+    box.addEventListener("dragstart", (e) => {
+      const card = e.target.closest("[data-id]");
+      if (!card) return;
+      e.dataTransfer.setData("text/plain", card.dataset.id);
+      e.dataTransfer.effectAllowed = "move";
+      card.classList.add("dragging");
+      sfx("drag");
+    });
+    box.addEventListener("dragend", (e) => {
+      e.target.closest("[data-id]")?.classList.remove("dragging");
+    });
   });
 
   $(".sockets")?.addEventListener("click", (e) => {
     const drop = e.target.closest("[data-act='drop']");
-    if (!drop) return;
-    removeStone(drop.dataset.id);
-    sfx("decompose");
-    toast("已分解");
-    refresh();
+    if (drop) {
+      removeStone(drop.dataset.id);
+      sfx("decompose");
+      toast("已分解");
+      refresh();
+      return;
+    }
+    if (e.target.closest("[data-clear]")) return;
+    const socket = e.target.closest("[data-drop]");
+    if (!socket) return;
+    openStonePicker(socket.dataset.drop);
+  });
+
+  const picker = $("#stone-picker");
+  picker?.addEventListener("pointerdown", (e) => {
+    if (!e.target.closest("#stone-picker-list")) return;
+    pickerDrag = { y: e.clientY, moved: false };
+  });
+  picker?.addEventListener("pointermove", (e) => {
+    if (Math.abs(e.clientY - pickerDrag.y) > 10) pickerDrag.moved = true;
+  });
+  picker?.addEventListener("click", (e) => {
+    if (e.target.closest("[data-picker-close]") || e.target.closest("#stone-picker-close")) {
+      closeStonePicker();
+      return;
+    }
+    const filter = e.target.closest("[data-picker-filter]");
+    if (filter) {
+      state.pickerFilter = filter.dataset.pickerFilter;
+      sfx("tab");
+      renderStonePicker();
+      return;
+    }
+    const card = e.target.closest("#stone-picker-list [data-id]");
+    if (!card || !state.pickerSlot || pickerDrag.moved) return;
+    if (state.pickerSlot === "target") setTarget(card.dataset.id);
+    else setMat(card.dataset.id);
+    closeStonePicker();
   });
 
   $$("[data-drop]").forEach((socket) => {
@@ -966,20 +1070,24 @@ function bind() {
     });
   });
 
-  $("#bag-filters").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-bag-filter]");
-    if (!btn) return;
-    state.bagFilter = btn.dataset.bagFilter;
-    sfx("tab");
-    renderBag();
+  $$(".bag-filters").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-bag-filter]");
+      if (!btn) return;
+      state.bagFilter = btn.dataset.bagFilter;
+      sfx("tab");
+      renderBag();
+    });
   });
 
-  $("#btn-clear-slots").addEventListener("click", () => {
-    state.targetId = null;
-    state.matId = null;
-    sfx("unslot");
-    toast("已卸下目标与材料");
-    refresh();
+  $$("[data-clear-slots]").forEach((el) => {
+    el.addEventListener("click", () => {
+      state.targetId = null;
+      state.matId = null;
+      sfx("unslot");
+      toast("已卸下目标与材料");
+      refresh();
+    });
   });
 
   $("#panel-forge").addEventListener("click", (e) => {
@@ -1041,15 +1149,17 @@ function bind() {
   $("#btn-hammer-epic4").addEventListener("click", () => doBatchEpicSkill(10, 4));
   $("#btn-calc").addEventListener("click", runCalc);
   $("#btn-batch").addEventListener("click", runBatch);
-  $("#btn-clear").addEventListener("click", () => {
-    if (!confirm("清空背包与统计？")) return;
-    sfx("clear");
-    state.bag = [];
-    state.targetId = null;
-    state.matId = null;
-    state.history = [];
-    state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0 };
-    refresh();
+  $$("[data-clear-bag]").forEach((el) => {
+    el.addEventListener("click", () => {
+      if (!confirm("清空背包与统计？")) return;
+      sfx("clear");
+      state.bag = [];
+      state.targetId = null;
+      state.matId = null;
+      state.history = [];
+      state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0 };
+      refresh();
+    });
   });
 
   $$("[data-preset]").forEach((b) =>

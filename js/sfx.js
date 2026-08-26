@@ -15,6 +15,7 @@
   const loops = new Map();
   let hoverAt = 0;
   let greeting = false;
+  let bgm = null;
 
   function vol() {
     return LEVELS[level].vol;
@@ -162,6 +163,35 @@
 
   function stopAllLoops() {
     [...loops.keys()].forEach(stopLoop);
+    stopBgm(true);
+  }
+
+  function bgmVolume() {
+    return Math.min(1, vol() * 0.42);
+  }
+
+  function ensureBgm() {
+    if (!bgm) {
+      bgm = new Audio("audio/bgm.mp3");
+      bgm.loop = true;
+      bgm.preload = "auto";
+    }
+    bgm.volume = bgmVolume();
+    return bgm;
+  }
+
+  function playBgm() {
+    if (!alive()) return;
+    const a = ensureBgm();
+    a.volume = bgmVolume();
+    const p = a.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }
+
+  function stopBgm(reset) {
+    if (!bgm) return;
+    bgm.pause();
+    if (reset) bgm.currentTime = 0;
   }
 
   const Sfx = {
@@ -176,6 +206,7 @@
       localStorage.setItem(KEY, LEVELS[level].id);
       boot();
       if (master) master.gain.setTargetAtTime(vol(), audio.currentTime, 0.05);
+      if (bgm) bgm.volume = bgmVolume();
       if (!alive()) {
         stopAllLoops();
       } else {
@@ -475,38 +506,10 @@
       });
     },
     ambientStart() {
-      if (loops.has("ambient") || !alive()) return;
-      startLoop("ambient", (c, dest) => {
-        const g = c.createGain();
-        g.gain.value = 0.035;
-        g.connect(dest);
-        const oscs = [110, 164.8, 196].map((f, i) => {
-          const o = c.createOscillator();
-          o.type = "sine";
-          o.frequency.value = f;
-          const lfo = c.createOscillator();
-          lfo.frequency.value = 0.07 + i * 0.03;
-          const lg = c.createGain();
-          lg.gain.value = 6 + i * 2;
-          lfo.connect(lg);
-          lg.connect(o.frequency);
-          o.connect(g);
-          o.start();
-          lfo.start();
-          return { o, lfo };
-        });
-        return {
-          stop() {
-            oscs.forEach(({ o, lfo }) => {
-              o.stop();
-              lfo.stop();
-            });
-          },
-        };
-      });
+      playBgm();
     },
     ambientStop() {
-      stopLoop("ambient");
+      stopBgm(false);
     },
   };
 
