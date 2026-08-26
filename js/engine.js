@@ -6,30 +6,6 @@
  * 固能环：抽中的词条保留来源数值，不重随机稀有度。
  */
 
-const GRADES = ["rare", "artifact", "epic"];
-const GRADE_META = {
-  rare: { name: "稀有", slots: 2, label: "紫" },
-  artifact: { name: "神器", slots: 3, label: "粉" },
-  epic: { name: "史诗", slots: 4, label: "史" },
-};
-
-const RARITIES = ["common", "advanced", "rare", "artifact", "epic", "transcendent", "origin"];
-const EMBRYO_RARITIES = ["common", "advanced", "rare", "artifact", "epic"];
-const RARITY_META = {
-  common: { name: "普通", exo: 180, rank: 0 },
-  advanced: { name: "高级", exo: 280, rank: 1 },
-  rare: { name: "稀有", exo: 400, rank: 2 },
-  artifact: { name: "神器", exo: 560, rank: 3 },
-  epic: { name: "史诗", exo: 780, rank: 4 },
-  transcendent: { name: "超凡", exo: 1080, rank: 5 },
-  origin: { name: "起源", exo: 1480, rank: 6 },
-};
-
-const STAR_NAMES = [
-  "辰初", "启明", "天枢", "天璇", "天玑", "天权",
-  "玉衡", "开阳", "摇光", "瑶台", "星河", "帝座",
-];
-
 function getAffixType(typeId) {
   return (
     AFFIX_CONFIG.find((t) => t.id === typeId) || {
@@ -46,20 +22,6 @@ function getAffixType(typeId) {
 function junkTypes() {
   return AFFIX_CONFIG.filter((t) => t.id !== "skillAtk");
 }
-
-const WASH_TABLE = {
-  common: 0.33,
-  advanced: 0.2,
-  rare: 0.2,
-  artifact: 0.15,
-  epic: 0.12,
-};
-
-const IDENTIFY_TABLE = {
-  rare: { common: 0.28, advanced: 0.36, rare: 0.28, artifact: 0.08 },
-  artifact: { advanced: 0.22, rare: 0.38, artifact: 0.3, epic: 0.1 },
-  epic: { rare: 0.20, artifact: 0.40, epic: 0.40 },
-};
 
 let _uid = 1;
 
@@ -107,25 +69,6 @@ function binomialP(n, k, p) {
   if (p >= 1) return k === n ? 1 : 0;
   return combinations(n, k) * p ** k * (1 - p) ** (n - k);
 }
-
-/** 单槽：该来源上一件词条被抽中的官方概率（同石每条相同，全部词条合计 100%） */
-const SYNTH_AFFIX_P = {
-  rare: {
-    rare: { target: 0.25, material: 0.25 },
-    artifact: { target: 0.1339, material: 0.244 },
-    epic: { target: 0.0271, material: 0.2365 },
-  },
-  artifact: {
-    rare: { target: 0.2357, material: 0.1464 },
-    artifact: { target: 1 / 6, material: 1 / 6 },
-    epic: { target: 0.054, material: 0.2095 },
-  },
-  epic: {
-    rare: { target: 0.2289, material: 0.0421 },
-    artifact: { target: 0.2022, material: 0.0637 },
-    epic: { target: 0.125, material: 0.125 },
-  },
-};
 
 function synthWeights(targetGrade, materialGrade) {
   const raw = SYNTH_AFFIX_P[targetGrade][materialGrade];
@@ -198,6 +141,16 @@ function skillCount(stone) {
   return stone.affixes.filter((a) => a.typeId === "skillAtk").length;
 }
 
+function crownCount(stone) {
+  return stone.affixes.filter((a) => a.crown).length;
+}
+
+function epicSkillCount(stone) {
+  return stone.affixes.filter(
+    (a) => a.typeId === "skillAtk" && RARITY_META[a.rarity].rank >= RARITY_META.epic.rank
+  ).length;
+}
+
 function totalSkillAtk(stone) {
   return stone.affixes
     .filter((a) => a.typeId === "skillAtk")
@@ -213,9 +166,10 @@ function isTreasure(stone) {
 }
 
 function isSeal(stone) {
+  const slots = GRADE_META.epic.slots;
   return (
     stone.grade === "epic" &&
-    stone.affixes.length === 4 &&
+    stone.affixes.length === slots &&
     stone.affixes.every(
       (a) => a.typeId === "skillAtk" && RARITY_META[a.rarity].rank >= RARITY_META.epic.rank
     )
@@ -223,7 +177,8 @@ function isSeal(stone) {
 }
 
 function isQuadOrigin(stone) {
-  return stone.affixes.length >= 4 && stone.affixes.every((a) => a.rarity === "origin");
+  const slots = GRADE_META.epic.slots;
+  return stone.affixes.length >= slots && stone.affixes.every((a) => a.rarity === "origin");
 }
 
 function hasEpicCrown(stone) {
@@ -241,7 +196,7 @@ function calcExorcism(stone) {
 }
 
 function shouldHaveCrown(type) {
-  return (type.tier ?? 7) <= 2;
+  return (type.tier ?? 7) <= CROWN_MAX_TIER;
 }
 
 function createAffix(typeId, rarity, crown = false) {
@@ -264,7 +219,7 @@ function createStone(grade, starIndex, affixes, extra = {}) {
       c.crown = shouldHaveCrown(getAffixType(c.typeId));
       return c;
     }),
-    washLeft: extra.washLeft ?? 3,
+    washLeft: extra.washLeft ?? WASH_LIMIT,
     hammered: extra.hammered ?? false,
     finalHammered: extra.finalHammered ?? false,
     sealed: extra.sealed ?? false,
@@ -276,7 +231,7 @@ function createStone(grade, starIndex, affixes, extra = {}) {
 }
 
 function randomStar() {
-  return 1 + Math.floor(rand() * 12);
+  return 1 + Math.floor(rand() * STAR_NAMES.length);
 }
 
 function rollIdentifyRarity(grade) {
@@ -300,7 +255,7 @@ function fillJunk(usedSkill, slots) {
 function identifyStone(grade, options = {}) {
   const slots = GRADE_META[grade].slots;
   let skill = 0;
-  const p = options.tactical ? 0.55 : options.skillBias ?? 0.22;
+  const p = options.tactical ? IDENTIFY_SKILL_P.tactical : options.skillBias ?? IDENTIFY_SKILL_P.default;
   for (let i = 0; i < slots; i++) {
     if (rand() < p) skill++;
   }
@@ -329,8 +284,8 @@ function customStone(grade, skillN, rarity = null, starIndex = null) {
 }
 
 function randomPlainSpec(usedIds = []) {
-  const pool = AFFIX_CONFIG.filter((t) => t.tier >= 3 && !usedIds.includes(t.id));
-  const list = pool.length ? pool : AFFIX_CONFIG.filter((t) => t.tier >= 3);
+  const pool = AFFIX_CONFIG.filter((t) => t.tier >= JUNK_MIN_TIER && !usedIds.includes(t.id));
+  const list = pool.length ? pool : AFFIX_CONFIG.filter((t) => t.tier >= JUNK_MIN_TIER);
   const type = list[Math.floor(Math.random() * list.length)];
   const rarity = EMBRYO_RARITIES[Math.floor(Math.random() * EMBRYO_RARITIES.length)];
   return { typeId: type.id, rarity };
@@ -396,11 +351,12 @@ function synthesize(target, material, useRing = false) {
     }
   }
 
-  const result = createStone(target.grade, target.starIndex, picked, { washLeft: 3 });
+  const result = createStone(target.grade, target.starIndex, picked, { washLeft: WASH_LIMIT });
   return { result };
 }
 
 function washStone(stone, lockIndex = -1) {
+  if (stone.hammered || stone.finalHammered) return { error: "已锤炼的星源石不能洗练" };
   if (stone.washLeft <= 0) return { error: "洗练次数已耗尽" };
   const next = createStone(
     stone.grade,
@@ -417,11 +373,6 @@ function washStone(stone, lockIndex = -1) {
   );
   return { result: next };
 }
-
-const HAMMER_COUNT_TABLE = {
-  blade: { 2: 0.2, 3: 0.4, 4: 0.4 },
-  raw: { 1: 0.3, 2: 0.3, 3: 0.2, 4: 0.2 },
-};
 
 function canHammerAffix(affix) {
   return RARITY_META[affix.rarity].rank < RARITY_META.origin.rank;
@@ -460,7 +411,7 @@ function hammerStone(stone, useBlade = false, useFinalBlade = false) {
     if (!bump(i)) return;
     hits++;
     upgraded++;
-    if (rand() < 0.4 && bump(i)) {
+    if (rand() < HAMMER_DOUBLE_P && bump(i)) {
       hits++;
       doubled++;
     }

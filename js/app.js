@@ -6,7 +6,7 @@ const state = {
   matId: null,
   lastResult: null,
   history: [],
-  stats: { fuses: 0, seals: 0, treasures: 0, origins: 0 },
+  stats: { fuses: 0, seals: 0, treasures: 0, origins: 0, skill2: 0, skill3: 0, cost: 0 },
   washLock: -1,
   fusing: false,
   hammering: false,
@@ -53,7 +53,7 @@ function load() {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if (!raw) return;
     state.bag = (raw.bag || []).map(restoreStone);
-    state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0, ...raw.stats };
+    state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0, skill2: 0, skill3: 0, cost: 0, ...raw.stats };
     state.history = raw.history || [];
   } catch {
     /* ignore broken save */
@@ -76,7 +76,23 @@ function addStone(stone, silent = false) {
     if (stone.seal) state.stats.seals++;
     if (stone.treasure) state.stats.treasures++;
     if (isQuadOrigin(stone)) state.stats.origins++;
+    const epicSkills = epicSkillCount(stone);
+    if (epicSkills === 2) state.stats.skill2++;
+    if (epicSkills === 3) state.stats.skill3++;
   }
+}
+
+function addCost(n) {
+  if (!n) return;
+  state.stats.cost = (state.stats.cost || 0) + n;
+}
+
+function fmtCost(n) {
+  return `${Number(n || 0).toLocaleString("zh-CN")}`;
+}
+
+function costYuan(n) {
+  return `${fmtCost(n)}块钱`;
 }
 
 function stoneHTML(stone, opts = {}) {
@@ -107,7 +123,7 @@ function stoneHTML(stone, opts = {}) {
     stone.seal ? `<span class="tag seal">玉玺</span>` : "",
     stone.hammered ? `<span class="tag hammer">${stone.finalHammered ? "已终炼" : "已锤炼"}</span>` : "",
     isQuadOrigin(stone) ? `<span class="tag origin-god">四起源</span>` : "",
-    `<span class="tag">洗练 ${stone.washLeft}/3</span>`,
+    `<span class="tag">洗练 ${stone.washLeft}/${WASH_LIMIT}</span>`,
   ].join("");
 
   const actions = opts.actions
@@ -147,14 +163,22 @@ function renderStats() {
   $("#stat-seals").textContent = state.stats.seals;
   if ($("#stat-origins")) $("#stat-origins").textContent = state.stats.origins || 0;
   $("#stat-bag").textContent = state.bag.length;
+  if ($("#stat-skill2")) $("#stat-skill2").textContent = state.stats.skill2 || 0;
+  if ($("#stat-skill3")) $("#stat-skill3").textContent = state.stats.skill3 || 0;
+  if ($("#stat-cost")) $("#stat-cost").textContent = costYuan(state.stats.cost);
+}
+
+function matchStoneFilter(stone, filter) {
+  if (filter === "treasure") return stone.treasure;
+  if (filter === "seal") return stone.seal;
+  if (String(filter).startsWith("crown")) {
+    return crownCount(stone) === Number(String(filter).slice(5));
+  }
+  return true;
 }
 
 function bagVisible() {
-  return state.bag.filter((s) => {
-    if (state.bagFilter === "treasure") return s.treasure;
-    if (state.bagFilter === "seal") return s.seal;
-    return true;
-  });
+  return state.bag.filter((s) => matchStoneFilter(s, state.bagFilter));
 }
 
 function renderBag() {
@@ -288,11 +312,7 @@ function toggleMat(id) {
 }
 
 function pickerVisible() {
-  return state.bag.filter((s) => {
-    if (state.pickerFilter === "treasure") return s.treasure;
-    if (state.pickerFilter === "seal") return s.seal;
-    return true;
-  });
+  return state.bag.filter((s) => matchStoneFilter(s, state.pickerFilter));
 }
 
 function openStonePicker(slot) {
@@ -413,9 +433,15 @@ function renderCustomSlots() {
 function doBatchEpicSkill(count, skillN) {
   const stones = spawnEpicSkillStones(count, skillN);
   stones.forEach((s) => addStone(s));
+  addCost(count * (COST.generate[skillN] || 0));
   state.targetId = stones[0].id;
   sfx("batch");
-  toast(`已放入 ${count} 颗 ${skillN} 史诗技攻随机石，可去合成或锤炼`);
+  const fee = COST.generate[skillN];
+  toast(
+    fee
+      ? `已放入 ${count} 颗 ${skillN} 史诗技攻，花费 ${costYuan(count * fee)}`
+      : `已放入 ${count} 颗 ${skillN} 史诗技攻随机石，可去合成或锤炼`
+  );
   refresh();
 }
 
@@ -428,9 +454,17 @@ function doCustom() {
   }));
   const stone = makeStoneFromSpecs(grade, star, specs);
   addStone(stone);
+  const fee = COST.generate[epicSkillCount(stone)] || 0;
+  addCost(fee);
   if (isHammerCandidate(stone)) state.targetId = stone.id;
   sfx("craft");
-  toast(isHammerCandidate(stone) ? "已放入背包，可去锤炼页锻打" : "已放入背包，可去合成或洗练");
+  toast(
+    fee
+      ? `已放入背包，花费 ${costYuan(fee)}`
+      : isHammerCandidate(stone)
+        ? "已放入背包，可去锤炼页锻打"
+        : "已放入背包，可去合成或洗练"
+  );
   refresh();
 }
 
@@ -558,6 +592,7 @@ async function doFuse() {
   removeStone(t.id);
   removeStone(m.id);
   addStone(result);
+  if (useRing) addCost(COST.ring);
   state.targetId = result.id;
   state.matId = null;
   state.lastResult = result;
@@ -750,10 +785,16 @@ function doWash() {
   refresh();
 }
 
+function hammerRank(stone) {
+  if (stone.finalHammered) return 2;
+  if (stone.hammered) return 1;
+  return 0;
+}
+
 function hammerCandidates() {
   return state.bag
     .filter(isHammerCandidate)
-    .sort((a, b) => Number(a.hammered) - Number(b.hammered));
+    .sort((a, b) => hammerRank(a) - hammerRank(b));
 }
 
 function usingFinalBlade() {
@@ -779,8 +820,11 @@ async function doHammer() {
     );
   }
   const beforeAffixes = t.affixes.map(cloneAffix);
-  const { result, error, upgraded, doubled, hits } = hammerStone(t, $("#use-blade").checked, finalBlade);
+  const useBlade = !!$("#use-blade")?.checked;
+  const { result, error, upgraded, doubled, hits } = hammerStone(t, useBlade, finalBlade);
   if (error) return toast(error, "deny");
+  if (finalBlade) addCost(COST.finalBlade);
+  else if (useBlade) addCost(COST.blade);
   const idx = state.bag.findIndex((s) => s.id === t.id);
   state.bag[idx] = result;
   if (!isQuadOrigin(t) && isQuadOrigin(result)) state.stats.origins++;
@@ -808,10 +852,19 @@ async function doHammer() {
 function renderWash() {
   const t = findStone(state.targetId);
   const box = $("#wash-stone");
+  const btn = $("#btn-wash");
   if (!box) return;
-  box.innerHTML = t
-    ? stoneHTML(t, { lockable: true, canDrop: true })
-    : `<div class="empty">将背包中的星源石设为目标后洗练</div>`;
+  const blocked = !!(t && (t.hammered || t.finalHammered));
+  if (btn) btn.disabled = blocked;
+  if (!t) {
+    box.innerHTML = `<div class="empty">将背包中的星源石设为目标后洗练</div>`;
+    return;
+  }
+  if (blocked) {
+    box.innerHTML = `${stoneHTML(t, { canDrop: true })}<div class="empty">已锤炼，不能再洗练</div>`;
+    return;
+  }
+  box.innerHTML = stoneHTML(t, { lockable: true, canDrop: true });
 }
 
 function renderHammer() {
@@ -1080,16 +1133,6 @@ function bind() {
     });
   });
 
-  $$("[data-clear-slots]").forEach((el) => {
-    el.addEventListener("click", () => {
-      state.targetId = null;
-      state.matId = null;
-      sfx("unslot");
-      toast("已卸下目标与材料");
-      refresh();
-    });
-  });
-
   $("#panel-forge").addEventListener("click", (e) => {
     const clear = e.target.closest("[data-clear]");
     if (!clear) return;
@@ -1157,7 +1200,7 @@ function bind() {
       state.targetId = null;
       state.matId = null;
       state.history = [];
-      state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0 };
+      state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0, skill2: 0, skill3: 0, cost: 0 };
       refresh();
     });
   });
@@ -1245,6 +1288,49 @@ function fmtPct(p) {
   return `${+(Number(p) * 100).toFixed(2)}%`;
 }
 
+function fillConfigCopy() {
+  const pct = (table) =>
+    Object.entries(table)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([n, p]) => `${n} 条 ${fmtPct(p)}`)
+      .join(" / ");
+
+  const costWrap = $("#stat-cost-wrap");
+  if (costWrap) {
+    costWrap.title = `固能环 ${costYuan(COST.ring)} / 1史技 ${costYuan(COST.generate[1])} / 2史技 ${costYuan(COST.generate[2])} / 3史技 ${costYuan(COST.generate[3])} / 4史技 ${costYuan(COST.generate[4])} / 锤炼之刃 ${costYuan(COST.blade)} / 终炼之刃 ${costYuan(COST.finalBlade)}`;
+  }
+
+  const craftHint = $("#craft-hint");
+  if (craftHint) {
+    craftHint.textContent = `先在这里做出星源石，放入背包后再去合成、洗练或锤炼。每个槽都会生成一条词条；没改过的槽会随机补一条 T${JUNK_MIN_TIER}～T7、不带皇冠的词条。生成成本：1 史诗技攻 ${costYuan(COST.generate[1])} · 2 史诗技攻 ${costYuan(COST.generate[2])} · 3 史诗技攻 ${costYuan(COST.generate[3])} · 4 史诗技攻 ${costYuan(COST.generate[4])}。合成本身不计成本，勾选固能环每次 ${costYuan(COST.ring)}。`;
+  }
+
+  const washHint = $("#wash-hint");
+  if (washHint) {
+    washHint.textContent = `只改词条品级，不改种类与星序。每石 ${WASH_LIMIT} 次，每条独立随机：史诗 ${fmtPct(WASH_TABLE.epic)} / 神器 ${fmtPct(WASH_TABLE.artifact)} / 稀有 ${fmtPct(WASH_TABLE.rare)} / 高级 ${fmtPct(WASH_TABLE.advanced)} / 普通 ${fmtPct(WASH_TABLE.common)}。最高洗到史诗。勾选稳定剂并点击一条词条即可锁定。已锤炼的星源石不能洗练。`;
+  }
+
+  const hammerHint = $("#hammer-hint");
+  if (hammerHint) {
+    const stay = fmtPct(1 - HAMMER_DOUBLE_P);
+    hammerHint.textContent = `背包里所有带史诗皇冠的珍品都会出现在这里，点选后锤炼。锤炼之刃：${pct(HAMMER_COUNT_TABLE.blade)}。空锤：${pct(HAMMER_COUNT_TABLE.raw)}。终炼之刃：只能打已锤炼过的石，概率同锤炼之刃，每石一次。起源已是满级，不会被选中；一条最多升到起源，整石最多四起源。第一次若已命中 7 次，终炼只打剩下那 1 次。被选中且未满级的每条有 ${fmtPct(HAMMER_DOUBLE_P)} 连升两级、${stay} 升一级。锤炼后不可再合成、不可再洗练。`;
+  }
+
+  const blade = $("#label-blade");
+  if (blade) blade.textContent = `使用锤炼之刃（${costYuan(COST.blade)}）`;
+  const finalBlade = $("#label-final-blade");
+  if (finalBlade) finalBlade.textContent = `使用终炼之刃（${costYuan(COST.finalBlade)}）`;
+
+  const ruleRing = $("#rule-ring");
+  if (ruleRing) {
+    ruleRing.innerHTML = `<b>固能环</b>：抽中的词条保留来源数值；不使用时，抽中词条会按目标石品级重随机稀有度。勾选时每次合成计成本 ${costYuan(COST.ring)}；合成本身不计成本。`;
+  }
+  const ruleCost = $("#rule-cost");
+  if (ruleCost) {
+    ruleCost.innerHTML = `<b>成本</b>：生成 1 / 2 / 3 / 4 条史诗技攻分别计 ${costYuan(COST.generate[1])} / ${costYuan(COST.generate[2])} / ${costYuan(COST.generate[3])} / ${costYuan(COST.generate[4])}。固能环 ${costYuan(COST.ring)}。锤炼之刃 ${costYuan(COST.blade)}，终炼之刃 ${costYuan(COST.finalBlade)}，空锤不计。顶栏 2史技、3史技、玉玺为累计获得颗数。`;
+  }
+}
+
 function renderOddsTables() {
   const synthHTML = GRADES.flatMap((tg) =>
     GRADES.map((mg) => {
@@ -1286,7 +1372,7 @@ function renderOddsTables() {
         <td>${cell(HAMMER_COUNT_TABLE.blade, 2)}</td>
         <td>${cell(HAMMER_COUNT_TABLE.blade, 3)}</td>
         <td>${cell(HAMMER_COUNT_TABLE.blade, 4)}</td>
-        <td rowspan="3">40%</td>
+        <td rowspan="3">${fmtPct(HAMMER_DOUBLE_P)}</td>
       </tr>
       <tr>
         <td>终炼之刃</td>
@@ -1296,7 +1382,7 @@ function renderOddsTables() {
         <td>${cell(HAMMER_COUNT_TABLE.blade, 4)}</td>
       </tr>
       <tr>
-        <td>不用之刃</td>
+        <td>空锤</td>
         <td>${cell(HAMMER_COUNT_TABLE.raw, 1)}</td>
         <td>${cell(HAMMER_COUNT_TABLE.raw, 2)}</td>
         <td>${cell(HAMMER_COUNT_TABLE.raw, 3)}</td>
@@ -1327,6 +1413,7 @@ initCustomForm();
 renderCustomSlots();
 renderAffixValueTable();
 renderOddsTables();
+fillConfigCopy();
 fillSkillSelects();
 applyPreset("seal");
 refresh();

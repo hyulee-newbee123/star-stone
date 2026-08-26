@@ -30,9 +30,12 @@
       <div class="stats-row">
         <div class="stats-bar">
           <span class="stat">合成 <b id="stat-fuses">0</b> 次</span>
-          <span class="stat">玉玺 <b id="stat-seals">0</b> 颗</span>
+          <span class="stat" title="累计获得的玉玺（4 条史诗及以上技攻）">玉玺 <b id="stat-seals">0</b> 颗</span>
           <span class="stat">四起源 <b id="stat-origins">0</b> 颗</span>
           <span class="stat">背包 <b id="stat-bag">0</b> 颗</span>
+          <span class="stat" title="累计获得的 2 条史诗及以上技攻石">2史技攻 <b id="stat-skill2">0</b></span>
+          <span class="stat" title="累计获得的 3 条史诗及以上技攻石">3史技攻 <b id="stat-skill3">0</b></span>
+          <span class="stat" id="stat-cost-wrap" title="">成本 <b id="stat-cost">0</b></span>
         </div>
         <button type="button" class="btn danger stats-clear" data-clear-bag>清空</button>
       </div>
@@ -52,7 +55,7 @@
       <div class="craft-page">
         <div class="craft-form">
           <h2>打造胚子</h2>
-          <p class="hint">先在这里做出星源石，放入背包后再去合成、洗练或锤炼。每个槽都会生成一条词条；没改过的槽会随机补一条 T3～T7、不带皇冠的词条。</p>
+          <p class="hint" id="craft-hint"></p>
           <div class="form-grid">
             <label>品级
               <select id="custom-grade">
@@ -89,8 +92,11 @@
               <button type="button" class="btn active" data-bag-filter="all">全部</button>
               <button type="button" class="btn" data-bag-filter="treasure">珍品</button>
               <button type="button" class="btn" data-bag-filter="seal">玉玺</button>
+              <button type="button" class="btn" data-bag-filter="crown1">1皇冠</button>
+              <button type="button" class="btn" data-bag-filter="crown2">2皇冠</button>
+              <button type="button" class="btn" data-bag-filter="crown3">3皇冠</button>
+              <button type="button" class="btn" data-bag-filter="crown4">4皇冠</button>
             </div>
-            <button type="button" class="btn" data-clear-slots>卸下双石</button>
           </div>
           <p class="hint bag-hint">放入后可在这里查看、分解，或设为合成目标 / 材料。</p>
           <div class="inventory"></div>
@@ -110,8 +116,11 @@
               <button type="button" class="btn active" data-bag-filter="all">全部</button>
               <button type="button" class="btn" data-bag-filter="treasure">珍品</button>
               <button type="button" class="btn" data-bag-filter="seal">玉玺</button>
+              <button type="button" class="btn" data-bag-filter="crown1">1皇冠</button>
+              <button type="button" class="btn" data-bag-filter="crown2">2皇冠</button>
+              <button type="button" class="btn" data-bag-filter="crown3">3皇冠</button>
+              <button type="button" class="btn" data-bag-filter="crown4">4皇冠</button>
             </div>
-            <button type="button" class="btn" data-clear-slots>卸下双石</button>
           </div>
           <p class="hint bag-hint bag-hint-desk">单击设为目标，再点一次取消。Shift+单击设为材料。也可点祭坛槽位弹出背包选择，或直接拖到祭坛。</p>
           <p class="hint bag-hint bag-hint-phone">点祭坛槽位从背包里选，或点「设为目标 / 设为材料」。</p>
@@ -218,7 +227,7 @@
 
     <section id="panel-wash" class="panel">
       <h2>星源洗练</h2>
-      <p class="hint">只改词条品级，不改种类与星序。每石 3 次，每条独立随机：史诗 12% / 神器 15% / 稀有 20% / 高级 20% / 普通 33%。最高洗到史诗。勾选稳定剂并点击一条词条即可锁定。</p>
+      <p class="hint" id="wash-hint"></p>
       <label class="check"><input type="checkbox" id="use-lock" /> 使用洗练稳定剂（锁定选中词条）</label>
       <button class="btn gold" id="btn-wash">洗练一次</button>
       <div id="wash-stone" style="max-width:420px;margin-top:14px"></div>
@@ -226,11 +235,11 @@
 
     <section id="panel-hammer" class="panel">
       <h2>珍品锤炼</h2>
-      <p class="hint">背包里所有带史诗皇冠的珍品都会出现在这里，点选后锤炼。锤炼之刃：2 条 20% / 3 条 40% / 4 条 40%。不用之刃：1 条 30% / 2 条 30% / 3 条 20% / 4 条 20%。终炼之刃：只能打已锤炼过的石，概率同锤炼之刃，每石一次。起源已是满级，不会被选中；一条最多升到起源，整石最多四起源。第一次若已命中 7 次，终炼只打剩下那 1 次。被选中且未满级的每条有 40% 连升两级、60% 升一级。锤炼后不可再合成。</p>
+      <p class="hint" id="hammer-hint"></p>
       <div class="hammer-actions">
         <button class="btn gold btn-hammer-main" id="btn-hammer">锤炼</button>
-        <label class="check"><input type="checkbox" id="use-blade" checked /> 使用锤炼之刃</label>
-        <label class="check"><input type="checkbox" id="use-final-blade" /> 使用终炼之刃</label>
+        <label class="check"><input type="checkbox" id="use-blade" checked /> <span id="label-blade">使用锤炼之刃</span></label>
+        <label class="check"><input type="checkbox" id="use-final-blade" /> <span id="label-final-blade">使用终炼之刃</span></label>
         <button class="btn" id="btn-hammer-epic4">生成 10 颗 4 史诗技攻</button>
       </div>
       <div id="hammer-stone" class="hammer-list"></div>
@@ -256,11 +265,12 @@
             <tbody class="synth-odds-body"></tbody>
           </table>
         </div>
-        <p><b>固能环</b>：抽中的词条保留来源数值；不使用时，抽中词条会按目标石品级重随机稀有度。</p>
+        <p id="rule-ring"><b>固能环</b>：抽中的词条保留来源数值；不使用时，抽中词条会按目标石品级重随机稀有度。勾选时每次合成计成本；合成本身不计成本。</p>
+        <p id="rule-cost"><b>成本</b>：生成史诗技攻、固能环、锤炼之刃、终炼之刃会计成本，空锤不计。顶栏 2史技、3史技为累计获得颗数。</p>
         <p><b>玉玺</b>：史诗石 + 4 条技能攻击力，且每条都是史诗及以上品质。品质不够不算玉玺。史诗 3 技攻 + 神器 3 技攻的四技攻概率见演算页（不放回抽取，不是独立四次相乘）。</p>
         <p><b>皇冠</b>：只看词条档位，T0～T2 一律带皇冠，与品质无关。T3 及以下不带皇冠。</p>
         <p><b>珍品</b>：史诗石且至少 1 条史诗及以上的皇冠词条（T0～T2 且史诗以上）。玉玺也是珍品。</p>
-        <p><b>洗练 / 锤炼</b>：洗练三连，每条独立随机，最高史诗。超凡、起源只能锤炼。起源是满级，锤炼不会选中。一条最多升到起源，整石最多四起源。普通锤炼一次且此后不能再合成。终炼之刃可对已锤炼石再锻一次，概率同锤炼之刃，但命中次数不超过剩余可升档（例如第一次已命中 7 次，终炼只打最后 1 次），每石仅一次。</p>
+        <p><b>洗练 / 锤炼</b>：洗练三连，每条独立随机，最高史诗。已锤炼的石不能再洗练。超凡、起源只能锤炼。起源是满级，锤炼不会选中。一条最多升到起源，整石最多四起源。普通锤炼一次且此后不能再合成、不能再洗练。终炼之刃可对已锤炼石再锻一次，概率同锤炼之刃，但命中次数不超过剩余可升档（例如第一次已命中 7 次，终炼只打最后 1 次），每石仅一次。</p>
         <div class="value-table-wrap">
           <table class="value-table">
             <thead>
@@ -292,7 +302,7 @@
           </table>
         </div>
         <p><b>星序</b>：1~12，对应辰初到帝座，仅作收藏与展示。</p>
-        <p><b>词条数值</b>：在 <code>js/affix-config.js</code> 里把 <code>values</code> / <code>exo</code> 的 <code>null</code> 改成官方数字，保存后刷新即可。未填写的词条效果显示「待填」；未填抗魔暂按旧的品质统一值。</p>
+        <p><b>词条数值</b>：词条效果、抗魔、品级槽位、洗练 / 鉴定 / 合成 / 锤炼概率和成本都在 <code>js/affix-config.js</code>，改完保存后刷新即可。未填写的词条效果显示「待填」；未填抗魔暂按旧的品质统一值。</p>
         <p><b>抗魔</b>：石头本身没有抗魔，只把各词条对应品质的 <code>exo</code> 相加。</p>
         <div class="value-table-wrap">
           <table class="value-table">
@@ -354,6 +364,10 @@
         <button type="button" class="btn active" data-picker-filter="all">全部</button>
         <button type="button" class="btn" data-picker-filter="treasure">珍品</button>
         <button type="button" class="btn" data-picker-filter="seal">玉玺</button>
+        <button type="button" class="btn" data-picker-filter="crown1">1皇冠</button>
+        <button type="button" class="btn" data-picker-filter="crown2">2皇冠</button>
+        <button type="button" class="btn" data-picker-filter="crown3">3皇冠</button>
+        <button type="button" class="btn" data-picker-filter="crown4">4皇冠</button>
       </div>
       <div id="stone-picker-list" class="stone-picker-list"></div>
     </div>

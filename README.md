@@ -27,4 +27,4 @@ https://hyulee-newbee123.github.io/star-stone/
 - Bilibili：李积极玩游戏（UID 330288867）  
 - 抖音：哇他洗哇（抖音号 926920998）
 
-词条数值可在 `js/affix-config.js` 修改，洗练 / 锤炼概率在 `js/engine.js`。
+词条数值、抗魔、槽位、洗练 / 鉴定 / 合成 / 锤炼概率和成本都在 `js/affix-config.js`，改完刷新即可。

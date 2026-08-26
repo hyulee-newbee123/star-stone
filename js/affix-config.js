@@ -9,7 +9,8 @@
  * tier 收益档位（0 最高 → 8 最低）：
  * 0 技能攻击力 / 1 分段技能伤害 / 2 所有属性强化 / 3 力智攻击暴击
  * 4 命中抗性回避减伤 / 5 防御 / 6 速度 / 7 生命魔法上限 / 8 体力精神
- * 皇冠只看 tier：T0～T2 一律带皇冠。
+ * 皇冠只看 tier：T0～CROWN_MAX_TIER 一律带皇冠。
+ * 品级槽位、洗练/锤炼/合成权重、成本也写在本文件，改完刷新即可。
  */
 const TIER_META = {
   0: "技能攻击力",
@@ -63,3 +64,82 @@ const AFFIX_CONFIG = [
   { id: "sta", name: "体力", unit: "", tier: 8, values: { common: 12, advanced: 24, rare: 36, artifact: 54, epic: 72, transcendent: 96, origin: 120 }, exo: { common: 62, advanced: 125, rare: 188, artifact: 281, epic: 375, transcendent: 500, origin: 625 } },
   { id: "spi", name: "精神", unit: "", tier: 8, values: { common: 12, advanced: 24, rare: 36, artifact: 54, epic: 72, transcendent: 96, origin: 120 }, exo: { common: 62, advanced: 125, rare: 188, artifact: 281, epic: 375, transcendent: 500, origin: 625 } },
 ];
+
+const GRADES = ["rare", "artifact", "epic"];
+const GRADE_META = {
+  rare: { name: "稀有", slots: 2, label: "紫" },
+  artifact: { name: "神器", slots: 3, label: "粉" },
+  epic: { name: "史诗", slots: 4, label: "史" },
+};
+
+const RARITIES = ["common", "advanced", "rare", "artifact", "epic", "transcendent", "origin"];
+const EMBRYO_RARITIES = ["common", "advanced", "rare", "artifact", "epic"];
+const RARITY_META = {
+  common: { name: "普通", exo: 180, rank: 0 },
+  advanced: { name: "高级", exo: 280, rank: 1 },
+  rare: { name: "稀有", exo: 400, rank: 2 },
+  artifact: { name: "神器", exo: 560, rank: 3 },
+  epic: { name: "史诗", exo: 780, rank: 4 },
+  transcendent: { name: "超凡", exo: 1080, rank: 5 },
+  origin: { name: "起源", exo: 1480, rank: 6 },
+};
+
+const STAR_NAMES = [
+  "辰初", "启明", "天枢", "天璇", "天玑", "天权",
+  "玉衡", "开阳", "摇光", "瑶台", "星河", "帝座",
+];
+
+const CROWN_MAX_TIER = 2;
+const WASH_LIMIT = 3;
+const JUNK_MIN_TIER = 3;
+
+const IDENTIFY_SKILL_P = {
+  default: 0.22,
+  tactical: 0.55,
+};
+
+const WASH_TABLE = {
+  common: 0.33,
+  advanced: 0.2,
+  rare: 0.2,
+  artifact: 0.15,
+  epic: 0.12,
+};
+
+const IDENTIFY_TABLE = {
+  rare: { common: 0.28, advanced: 0.36, rare: 0.28, artifact: 0.08 },
+  artifact: { advanced: 0.22, rare: 0.38, artifact: 0.3, epic: 0.1 },
+  epic: { rare: 0.2, artifact: 0.4, epic: 0.4 },
+};
+
+const SYNTH_AFFIX_P = {
+  rare: {
+    rare: { target: 0.25, material: 0.25 },
+    artifact: { target: 0.1339, material: 0.244 },
+    epic: { target: 0.0271, material: 0.2365 },
+  },
+  artifact: {
+    rare: { target: 0.2357, material: 0.1464 },
+    artifact: { target: 1 / 6, material: 1 / 6 },
+    epic: { target: 0.054, material: 0.2095 },
+  },
+  epic: {
+    rare: { target: 0.2289, material: 0.0421 },
+    artifact: { target: 0.2022, material: 0.0637 },
+    epic: { target: 0.125, material: 0.125 },
+  },
+};
+
+const HAMMER_COUNT_TABLE = {
+  blade: { 2: 0.2, 3: 0.4, 4: 0.4 },
+  raw: { 1: 0.3, 2: 0.3, 3: 0.2, 4: 0.2 },
+};
+
+const HAMMER_DOUBLE_P = 0.4;
+
+const COST = {
+  generate: { 1: 60, 2: 950, 3: 6000, 4: 30000 },
+  ring: 150,
+  blade: 2000,
+  finalBlade: 3000,
+};
