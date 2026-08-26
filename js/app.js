@@ -1327,7 +1327,32 @@ function fillConfigCopy() {
   }
   const ruleCost = $("#rule-cost");
   if (ruleCost) {
-    ruleCost.innerHTML = `<b>成本</b>：生成 1 / 2 / 3 / 4 条史诗技攻分别计 ${costYuan(COST.generate[1])} / ${costYuan(COST.generate[2])} / ${costYuan(COST.generate[3])} / ${costYuan(COST.generate[4])}。固能环 ${costYuan(COST.ring)}。锤炼之刃 ${costYuan(COST.blade)}，终炼之刃 ${costYuan(COST.finalBlade)}，空锤不计。顶栏 2史技、3史技、玉玺为累计获得颗数。`;
+    ruleCost.innerHTML = `<b>成本</b>：生成 1 / 2 / 3 / 4 条史诗技攻分别计 ${costYuan(COST.generate[1])} / ${costYuan(COST.generate[2])} / ${costYuan(COST.generate[3])} / ${costYuan(COST.generate[4])}。固能环 ${costYuan(COST.ring)}。锤炼之刃 ${costYuan(COST.blade)}，终炼之刃 ${costYuan(COST.finalBlade)}，空锤不计。顶栏 2史技、3史技、玉玺为累计获得颗数。下表是「只买 1 史诗技攻再往上合」的期望，不是生成按钮的标价。`;
+  }
+  const ruleSynth = $("#rule-synth-expect");
+  if (ruleSynth) {
+    ruleSynth.innerHTML = `<b>从 1 史诗技攻往上合的期望成本</b>：只买 1 史诗技攻（${costYuan(COST.generate[1])}），每次合成用固能环（${costYuan(COST.ring)}）保住史诗，合成本身不计。副产物回炉，0 技攻丢掉。配方链：1+1 → 2 技，2+2 → 3 技，3+3 → 4 技（玉玺）；做玉玺时 2+2 偶尔直接出的 4 技也计入。不用环的话洗完基本不再是史诗，此表不作参考。`;
+  }
+  const expectBody = $("#synth-expect-body");
+  if (expectBody && typeof SYNTH_COST_EXPECT !== "undefined") {
+    const rows = [
+      [2, "2 史诗技攻"],
+      [3, "3 史诗技攻"],
+      [4, "4 史诗技攻（玉玺）"],
+    ];
+    const qty = (n) => `${+Number(n).toFixed(2)}`;
+    expectBody.innerHTML = rows
+      .map(([k, name]) => {
+        const row = SYNTH_COST_EXPECT[k];
+        const yuan = Math.round(row.ones * COST.generate[1] + row.fuses * COST.ring);
+        return `<tr>
+          <td>${name}</td>
+          <td>${costYuan(yuan)}</td>
+          <td>${qty(row.ones)} 颗</td>
+          <td>${qty(row.fuses)} 次</td>
+        </tr>`;
+      })
+      .join("");
   }
 }
 

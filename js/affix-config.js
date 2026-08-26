@@ -143,3 +143,10 @@ const COST = {
   blade: 2000,
   finalBlade: 3000,
 };
+
+/** 只买 1 史诗技攻、固能环、副产物回炉：1+1→2，2+2→3，3+3→4。ones / fuses 为期望消耗。 */
+const SYNTH_COST_EXPECT = {
+  2: { ones: 20 / 3, fuses: 14 / 3 },
+  3: { ones: 127 / 3, fuses: 833 / 24 },
+  4: { ones: 69440 / 357, fuses: 8330 / 51 },
+};
