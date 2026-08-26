@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#07060c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>星源工坊 · 星源石模拟合成器</title>
+  <title>星源工坊 · 星源石模拟合成器 v1.0</title>
+  <meta name="description" content="星源石合成 / 洗练 / 锤炼模拟器。按官方权重不放回演算概率，公益开源，仅供娱乐。" />
+  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v1.0" />
+  <meta property="og:description" content="自定义胚子、合成、洗练、锤炼与玉玺演算。非官方模拟器，仅供娱乐。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://hyulee-newbee123.github.io/star-stone/" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet" />
@@ -17,13 +22,19 @@
   <div class="app">
     <header class="hero">
       <div class="eyebrow">时空秘境 · 星核工坊</div>
-      <h1>星源石合成器</h1>
+      <div class="hero-title">
+        <h1>星源石合成器</h1>
+        <span class="ver">v1.0</span>
+      </div>
       <p>自定义胚子 · 合成 · 洗练 · 锤炼 · 玉玺演算</p>
-      <div class="stats-bar">
-        <span class="stat">合成 <b id="stat-fuses">0</b> 次</span>
-        <span class="stat">玉玺 <b id="stat-seals">0</b> 颗</span>
-        <span class="stat">四起源 <b id="stat-origins">0</b> 颗</span>
-        <span class="stat">背包 <b id="stat-bag">0</b> 颗</span>
+      <div class="stats-row">
+        <div class="stats-bar">
+          <span class="stat">合成 <b id="stat-fuses">0</b> 次</span>
+          <span class="stat">玉玺 <b id="stat-seals">0</b> 颗</span>
+          <span class="stat">四起源 <b id="stat-origins">0</b> 颗</span>
+          <span class="stat">背包 <b id="stat-bag">0</b> 颗</span>
+        </div>
+        <button type="button" class="btn danger stats-clear" data-clear-bag>清空</button>
       </div>
     </header>
     <div class="ornament"></div>
@@ -80,7 +91,6 @@
               <button type="button" class="btn" data-bag-filter="seal">玉玺</button>
             </div>
             <button type="button" class="btn" data-clear-slots>卸下双石</button>
-            <button type="button" class="btn danger" data-clear-bag>清空</button>
           </div>
           <p class="hint bag-hint">放入后可在这里查看、分解，或设为合成目标 / 材料。</p>
           <div class="inventory"></div>
@@ -102,7 +112,6 @@
               <button type="button" class="btn" data-bag-filter="seal">玉玺</button>
             </div>
             <button type="button" class="btn" data-clear-slots>卸下双石</button>
-            <button type="button" class="btn danger" data-clear-bag>清空</button>
           </div>
           <p class="hint bag-hint bag-hint-desk">单击设为目标，再点一次取消。Shift+单击设为材料。也可点祭坛槽位弹出背包选择，或直接拖到祭坛。</p>
           <p class="hint bag-hint bag-hint-phone">点祭坛槽位从背包里选，或点「设为目标 / 设为材料」。</p>
@@ -209,7 +218,7 @@
 
     <section id="panel-wash" class="panel">
       <h2>星源洗练</h2>
-      <p class="hint">只改词条品级，不改种类与星序。每石 3 次，每条独立随机：史诗 13% / 神器 15% / 稀有 20% / 高级 20% / 普通 33%。最高洗到史诗。勾选稳定剂并点击一条词条即可锁定。</p>
+      <p class="hint">只改词条品级，不改种类与星序。每石 3 次，每条独立随机：史诗 12% / 神器 15% / 稀有 20% / 高级 20% / 普通 33%。最高洗到史诗。勾选稳定剂并点击一条词条即可锁定。</p>
       <label class="check"><input type="checkbox" id="use-lock" /> 使用洗练稳定剂（锁定选中词条）</label>
       <button class="btn gold" id="btn-wash">洗练一次</button>
       <div id="wash-stone" style="max-width:420px;margin-top:14px"></div>
@@ -325,7 +334,13 @@
       </div>
     </section>
 
-    <footer class="note">非官方模拟器 · 用于理解合成手感与概率 · 地下城与勇士</footer>
+    <footer class="note">
+      <p class="note-author">作者 李积极</p>
+      <p><a href="https://space.bilibili.com/330288867" target="_blank" rel="noopener noreferrer">Bilibili：李积极玩游戏</a> · UID 330288867</p>
+      <p>抖音：哇他洗哇 · 抖音号 926920998</p>
+      <p>公益开源软件，仅供娱乐 · 非官方模拟器</p>
+      <p>背景音乐《Old Lumière - Révérence》版权归原作者</p>
+    </footer>
   </div>
 
   <div class="stone-picker" id="stone-picker" hidden>
