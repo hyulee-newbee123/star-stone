@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#07060c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>星源工坊 · 星源石模拟合成器</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -50,7 +52,8 @@
             <button type="button" class="btn" id="btn-clear-slots">卸下双石</button>
             <button type="button" class="btn danger" id="btn-clear">清空</button>
           </div>
-          <p class="hint bag-hint">单击设为目标，再点一次取消。Shift+单击设为材料。也可直接拖到右侧祭坛。</p>
+          <p class="hint bag-hint bag-hint-desk">单击设为目标，再点一次取消。Shift+单击设为材料。也可直接拖到右侧祭坛。</p>
+          <p class="hint bag-hint bag-hint-phone">点「设为目标 / 设为材料」。选中的石会出现在上方祭坛。</p>
           <div id="inventory" class="inventory"></div>
           <details class="craft-box" open>
             <summary>打造胚子</summary>
