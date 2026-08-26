@@ -1,0 +1,8 @@
+星源石合成器 · 使用方法
+
+1. 解压到任意文件夹
+2. 双击「打开模拟器.bat」，或直接用浏览器打开 index.html
+3. 词条数值和抗魔在 js\affix-config.js；洗练 / 锤炼概率在 js\engine.js。改完保存后刷新页面即可
+
+不需要安装，不需要联网。建议用 Chrome / Edge。
+如果用 VS Code 的 Code Runner 打开 HTML 会报错，请改用上面的方式。
