@@ -890,6 +890,11 @@ function bind() {
     if (e.target.matches("input[type='checkbox']")) sfx("check");
   });
 
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    const craft = $(".craft-box");
+    if (craft) craft.open = false;
+  }
+
   $$(".tabs button").forEach((btn) => {
     btn.addEventListener("click", () => {
       $$(".tabs button").forEach((b) => b.classList.remove("active"));
@@ -897,6 +902,9 @@ function bind() {
       btn.classList.add("active");
       $(`#panel-${btn.dataset.tab}`).classList.add("active");
       sfx("tab");
+      if (window.matchMedia("(max-width: 720px)").matches) {
+        $(".tabs")?.scrollIntoView({ block: "start" });
+      }
     });
   });
 
