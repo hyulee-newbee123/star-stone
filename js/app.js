@@ -660,11 +660,44 @@ async function doFuse() {
   refresh();
 }
 
+function fillBurstLayer(el, count, shardRatio = 0.28) {
+  if (!el) return;
+  const bits = [];
+  for (let i = 0; i < count; i++) {
+    const ang = (Math.PI * 2 * i) / count + Math.random() * 0.55;
+    const dist = 26 + Math.random() * 68;
+    const tx = (Math.cos(ang) * dist).toFixed(1);
+    const ty = (Math.sin(ang) * dist).toFixed(1);
+    const delay = (Math.random() * 0.28).toFixed(2);
+    const dur = (0.55 + Math.random() * 0.95).toFixed(2);
+    const shard = Math.random() < shardRatio;
+    const w = shard ? (2 + Math.random() * 3).toFixed(1) : (3 + Math.random() * 9).toFixed(1);
+    const h = shard ? (16 + Math.random() * 34).toFixed(1) : w;
+    bits.push(
+      `<i class="fx-spark${shard ? " shard" : ""}" style="--tx:${tx}vmin;--ty:${ty}vmin;--rot:${((ang * 180) / Math.PI).toFixed(1)}deg;width:${w}px;height:${h}px;animation-delay:${delay}s;animation-duration:${dur}s"></i>`
+    );
+  }
+  el.innerHTML = bits.join("");
+}
+
+function replayOverlay(el) {
+  el.classList.remove("show", "boom");
+  void el.offsetWidth;
+  el.classList.add("show");
+}
+
 function flashSeal() {
   sfx("seal");
   const el = $("#seal-flash");
-  el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 1200);
+  fillBurstLayer($("#seal-sparks"), 56, 0.22);
+  replayOverlay(el);
+  document.body.classList.add("seal-shake");
+  setTimeout(() => {
+    el.classList.remove("show");
+    document.body.classList.remove("seal-shake");
+    const sparks = $("#seal-sparks");
+    if (sparks) sparks.innerHTML = "";
+  }, 2200);
 }
 
 function fillHammerStrip(reel, typeId) {
@@ -703,22 +736,24 @@ function playOriginGodFlash() {
   sfx("originGod");
   const el = $("#origin-flash");
   const box = $("#origin-sparks");
-  box.innerHTML = Array.from({ length: 32 }, () => {
-    const left = (Math.random() * 100).toFixed(1);
-    const delay = (Math.random() * 0.9).toFixed(2);
-    const dur = (1 + Math.random() * 1.3).toFixed(2);
-    const size = (3 + Math.random() * 7).toFixed(1);
-    return `<i class="origin-spark" style="left:${left}%;width:${size}px;height:${size}px;animation-delay:${delay}s;animation-duration:${dur}s"></i>`;
-  }).join("");
-  el.classList.add("show");
+  fillBurstLayer(box, 84, 0.38);
+  replayOverlay(el);
   document.body.classList.add("origin-shake");
+  const boomT = setTimeout(() => {
+    el.classList.add("boom");
+    fillBurstLayer(box, 96, 0.45);
+    document.body.classList.remove("origin-shake");
+    void document.body.offsetWidth;
+    document.body.classList.add("origin-shake", "origin-shake-hard");
+  }, 1720);
   return new Promise((resolve) => {
     setTimeout(() => {
-      el.classList.remove("show");
-      document.body.classList.remove("origin-shake");
+      clearTimeout(boomT);
+      el.classList.remove("show", "boom");
+      document.body.classList.remove("origin-shake", "origin-shake-hard");
       box.innerHTML = "";
       resolve();
-    }, 3200);
+    }, 4000);
   });
 }
 

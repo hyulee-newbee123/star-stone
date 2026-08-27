@@ -411,25 +411,29 @@
     seal() {
       whenReady(() => {
         const t0 = audio.currentTime + 0.01;
-        rumbleAt(t0, 0.55, 0.12, 280);
-        at(t0, 98, "sine", 1.15, 0.22, 0.01);
-        at(t0, 147, "sine", 1.05, 0.16, 0.012);
-        at(t0, 196, "triangle", 0.7, 0.1, 0.01);
-        const shimmer = noise(t0, 0.9, "highpass", 3200);
-        out(shimmer, t0, 0.02, 0.09, 0.18, 0.65);
-        bellAt(t0 + 0.06, 523.25, 1.05, 0.2);
-        bellAt(t0 + 0.14, 659.25, 0.95, 0.14);
-        bellAt(t0 + 0.22, 783.99, 0.9, 0.12);
-        at(t0 + 0.28, 392, "sine", 0.85, 0.12);
-        at(t0 + 0.36, 1046.5, "sine", 0.55, 0.1);
-        const rise = osc("sine", 420, t0 + 0.2, 0.55);
-        rise.frequency.exponentialRampToValueAtTime(1320, t0 + 0.72);
-        out(rise, t0 + 0.2, 0.03, 0.1, 0.2, 0.28);
-        bellAt(t0 + 0.52, 784, 0.7, 0.16);
-        bellAt(t0 + 0.6, 1174.7, 0.75, 0.14);
-        at(t0 + 0.68, 1568, "sine", 0.45, 0.08);
-        const spark = noise(t0 + 0.5, 0.4, "bandpass", 4800);
-        out(spark, t0 + 0.5, 0.01, 0.08, 0.08, 0.28);
+        rumbleAt(t0, 0.85, 0.18, 220);
+        rumbleAt(t0 + 0.08, 0.45, 0.14, 420);
+        at(t0, 82, "sine", 1.35, 0.28, 0.012);
+        at(t0, 123, "sine", 1.15, 0.2, 0.01);
+        at(t0, 196, "triangle", 0.85, 0.12, 0.008);
+        const slam = noise(t0, 0.28, "lowpass", 900);
+        out(slam, t0, 0.002, 0.16, 0.05, 0.22);
+        const shimmer = noise(t0, 1.05, "highpass", 2800);
+        out(shimmer, t0, 0.02, 0.12, 0.22, 0.7);
+        bellAt(t0 + 0.05, 523.25, 1.2, 0.22);
+        bellAt(t0 + 0.12, 659.25, 1.05, 0.16);
+        bellAt(t0 + 0.2, 783.99, 1.0, 0.14);
+        at(t0 + 0.26, 392, "sine", 0.95, 0.14);
+        at(t0 + 0.34, 1046.5, "sine", 0.65, 0.12);
+        const rise = osc("sine", 380, t0 + 0.16, 0.7);
+        rise.frequency.exponentialRampToValueAtTime(1480, t0 + 0.78);
+        out(rise, t0 + 0.16, 0.03, 0.12, 0.22, 0.32);
+        rumbleAt(t0 + 0.48, 0.55, 0.12, 360);
+        bellAt(t0 + 0.5, 784, 0.85, 0.18);
+        bellAt(t0 + 0.58, 1174.7, 0.9, 0.16);
+        at(t0 + 0.66, 1568, "sine", 0.55, 0.1);
+        const spark = noise(t0 + 0.48, 0.5, "bandpass", 5200);
+        out(spark, t0 + 0.48, 0.01, 0.1, 0.1, 0.32);
       });
     },
     hammerStart() {
@@ -486,10 +490,13 @@
         });
 
         const boom = t0 + 1.72;
-        rumbleAt(boom, 1.4, 0.22, 240);
+        rumbleAt(boom, 1.8, 0.28, 180);
+        rumbleAt(boom + 0.08, 0.9, 0.18, 520);
         ;[130.8, 164.8, 196, 261.6, 329.6, 392, 523.3].forEach((f, i) => {
-          at(boom + i * 0.03, f, i < 3 ? "sine" : "triangle", 1.35, 0.16 - i * 0.012, 0.02);
+          at(boom + i * 0.025, f, i < 3 ? "sine" : "triangle", 1.55, 0.18 - i * 0.012, 0.016);
         });
+        const slam = noise(boom, 0.35, "lowpass", 700);
+        out(slam, boom, 0.002, 0.18, 0.06, 0.28);
         const scream = osc("sawtooth", 180, boom, 1.2);
         scream.frequency.exponentialRampToValueAtTime(720, boom + 0.85);
         const sf = audio.createBiquadFilter();
