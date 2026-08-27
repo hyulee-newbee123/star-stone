@@ -801,12 +801,28 @@ function usingFinalBlade() {
   return !!$("#use-final-blade")?.checked;
 }
 
-function pickHammerStone() {
+function eligibleHammerList() {
   const finalBlade = usingFinalBlade();
-  const list = hammerCandidates().filter((s) =>
+  return hammerCandidates().filter((s) =>
     finalBlade ? s.hammered && !s.finalHammered : !s.hammered
   );
+}
+
+function pickHammerStone() {
+  const list = eligibleHammerList();
   return list.find((s) => s.id === state.targetId) || (list.length === 1 ? list[0] : null);
+}
+
+function syncHammerSelection() {
+  const picked = pickHammerStone();
+  if (picked) {
+    if (state.matId === picked.id) state.matId = null;
+    state.targetId = picked.id;
+    return;
+  }
+  const cur = findStone(state.targetId);
+  if (!cur) return;
+  if (!eligibleHammerList().some((s) => s.id === cur.id)) state.targetId = null;
 }
 
 async function doHammer() {
@@ -839,6 +855,7 @@ async function doHammer() {
   state.hammering = false;
   btn.disabled = false;
   btn.textContent = "锤炼";
+  syncHammerSelection();
 
   if (isQuadOrigin(result)) toast("神铸天成：四起源");
   else {
@@ -875,15 +892,12 @@ function renderHammer() {
     box.innerHTML = `<div class="empty">背包里还没有带史诗皇冠的珍品<br>史诗词条带皇冠即可出现在这里</div>`;
     return;
   }
+  const picked = pickHammerStone();
   box.innerHTML = list
     .map((s) =>
       stoneHTML(s, {
         canDrop: true,
-        selectedTarget:
-          s.id === state.targetId ||
-          (usingFinalBlade()
-            ? list.filter((x) => x.hammered && !x.finalHammered).length === 1 && s.hammered && !s.finalHammered
-            : list.filter((x) => !x.hammered).length === 1 && !s.hammered),
+        selectedTarget: !!(picked && s.id === picked.id),
       })
     )
     .join("");
@@ -1154,8 +1168,14 @@ function bind() {
     }
     const li = e.target.closest("[data-lock]");
     if (!li) return;
-    state.washLock = Number(li.dataset.lock);
-    sfx("lock");
+    const idx = Number(li.dataset.lock);
+    if (state.washLock === idx) {
+      state.washLock = -1;
+      sfx("unslot");
+    } else {
+      state.washLock = idx;
+      sfx("lock");
+    }
     renderWash();
   });
 
@@ -1170,6 +1190,14 @@ function bind() {
     }
     const card = e.target.closest("[data-id]");
     if (!card) return;
+    const stone = findStone(card.dataset.id);
+    if (!stone) return;
+    if (!eligibleHammerList().some((s) => s.id === stone.id)) {
+      return toast(
+        usingFinalBlade() ? "终炼只能选已锤炼、尚未终炼的珍品" : "这颗已经锤炼过了，勾选终炼之刃可再锻一次",
+        "deny"
+      );
+    }
     setTarget(card.dataset.id);
   });
 
@@ -1183,11 +1211,13 @@ function bind() {
   $("#btn-hammer").addEventListener("click", doHammer);
   $("#use-final-blade")?.addEventListener("change", () => {
     if ($("#use-final-blade").checked && $("#use-blade")) $("#use-blade").checked = false;
-    renderHammer();
+    syncHammerSelection();
+    refresh();
   });
   $("#use-blade")?.addEventListener("change", () => {
     if ($("#use-blade").checked && $("#use-final-blade")) $("#use-final-blade").checked = false;
-    renderHammer();
+    syncHammerSelection();
+    refresh();
   });
   $("#btn-hammer-epic4").addEventListener("click", () => doBatchEpicSkill(10, 4));
   $("#btn-calc").addEventListener("click", runCalc);
