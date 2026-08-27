@@ -11,8 +11,10 @@ const state = {
   fusing: false,
   hammering: false,
   bagFilter: "all",
+  bagGradeFilter: "all",
   pickerSlot: null,
   pickerFilter: "all",
+  pickerGradeFilter: "all",
 };
 
 function $(sel, root = document) {
@@ -168,7 +170,8 @@ function renderStats() {
   if ($("#stat-cost")) $("#stat-cost").textContent = costYuan(state.stats.cost);
 }
 
-function matchStoneFilter(stone, filter) {
+function matchStoneFilter(stone, filter, gradeFilter) {
+  if (gradeFilter && gradeFilter !== "all" && stone.grade !== gradeFilter) return false;
   if (filter === "treasure") return stone.treasure;
   if (filter === "seal") return stone.seal;
   if (String(filter).startsWith("crown")) {
@@ -178,7 +181,7 @@ function matchStoneFilter(stone, filter) {
 }
 
 function bagVisible() {
-  return state.bag.filter((s) => matchStoneFilter(s, state.bagFilter));
+  return state.bag.filter((s) => matchStoneFilter(s, state.bagFilter, state.bagGradeFilter));
 }
 
 function renderBag() {
@@ -189,6 +192,9 @@ function renderBag() {
   if (m) bits.push("已选材料");
   $$(".bag-summary").forEach((el) => {
     el.textContent = bits.join(" · ");
+  });
+  $$(".bag-filters [data-bag-grade]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.bagGrade === state.bagGradeFilter);
   });
   $$(".bag-filters [data-bag-filter]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.bagFilter === state.bagFilter);
@@ -312,12 +318,13 @@ function toggleMat(id) {
 }
 
 function pickerVisible() {
-  return state.bag.filter((s) => matchStoneFilter(s, state.pickerFilter));
+  return state.bag.filter((s) => matchStoneFilter(s, state.pickerFilter, state.pickerGradeFilter));
 }
 
 function openStonePicker(slot) {
   state.pickerSlot = slot;
   state.pickerFilter = "all";
+  state.pickerGradeFilter = "all";
   const box = $("#stone-picker");
   if (!box) return;
   box.hidden = false;
@@ -341,6 +348,9 @@ function renderStonePicker() {
   const list = $("#stone-picker-list");
   if (!title || !list || !state.pickerSlot) return;
   title.textContent = state.pickerSlot === "target" ? "选择目标石" : "选择材料石";
+  $$("#stone-picker-filters [data-picker-grade]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.pickerGrade === state.pickerGradeFilter);
+  });
   $$("#stone-picker-filters [data-picker-filter]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.pickerFilter === state.pickerFilter);
   });
@@ -1183,6 +1193,13 @@ function bind() {
       closeStonePicker();
       return;
     }
+    const grade = e.target.closest("[data-picker-grade]");
+    if (grade) {
+      state.pickerGradeFilter = grade.dataset.pickerGrade;
+      sfx("tab");
+      renderStonePicker();
+      return;
+    }
     const filter = e.target.closest("[data-picker-filter]");
     if (filter) {
       state.pickerFilter = filter.dataset.pickerFilter;
@@ -1214,8 +1231,15 @@ function bind() {
     });
   });
 
-  $$(".bag-filters").forEach((el) => {
+  $$(".bag-toolbar").forEach((el) => {
     el.addEventListener("click", (e) => {
+      const grade = e.target.closest("[data-bag-grade]");
+      if (grade) {
+        state.bagGradeFilter = grade.dataset.bagGrade;
+        sfx("tab");
+        renderBag();
+        return;
+      }
       const btn = e.target.closest("[data-bag-filter]");
       if (!btn) return;
       state.bagFilter = btn.dataset.bagFilter;

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#07060c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>星源工坊 · 星源石模拟合成器 v1.1</title>
+  <title>星源工坊 · 星源石模拟合成器 v1.2</title>
   <meta name="description" content="星源石合成 / 洗练 / 锤炼模拟器。按官方权重不放回演算概率，公益开源，仅供娱乐。" />
-  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v1.1" />
+  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v1.2" />
   <meta property="og:description" content="自定义胚子、合成、洗练、锤炼与玉玺演算。非官方模拟器，仅供娱乐。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://hyulee-newbee123.github.io/star-stone/" />
@@ -24,7 +24,7 @@
       <div class="eyebrow">时空秘境 · 星核工坊</div>
       <div class="hero-title">
         <h1>星源石合成器</h1>
-        <span class="ver">v1.1</span>
+        <span class="ver">v1.2</span>
       </div>
       <p>自定义胚子 · 合成 · 洗练 · 锤炼 · 玉玺演算</p>
       <div class="stats-row">
@@ -88,6 +88,12 @@
             <span class="bag-summary"></span>
           </div>
           <div class="bag-toolbar">
+            <div class="bag-filters bag-filters-grade">
+              <button type="button" class="btn active" data-bag-grade="all">全部</button>
+              <button type="button" class="btn" data-bag-grade="rare">稀有</button>
+              <button type="button" class="btn" data-bag-grade="artifact">神器</button>
+              <button type="button" class="btn" data-bag-grade="epic">史诗</button>
+            </div>
             <div class="bag-filters">
               <button type="button" class="btn active" data-bag-filter="all">全部</button>
               <button type="button" class="btn" data-bag-filter="treasure">珍品</button>
@@ -112,6 +118,12 @@
             <span class="bag-summary"></span>
           </div>
           <div class="bag-toolbar">
+            <div class="bag-filters bag-filters-grade">
+              <button type="button" class="btn active" data-bag-grade="all">全部</button>
+              <button type="button" class="btn" data-bag-grade="rare">稀有</button>
+              <button type="button" class="btn" data-bag-grade="artifact">神器</button>
+              <button type="button" class="btn" data-bag-grade="epic">史诗</button>
+            </div>
             <div class="bag-filters">
               <button type="button" class="btn active" data-bag-filter="all">全部</button>
               <button type="button" class="btn" data-bag-filter="treasure">珍品</button>
@@ -375,13 +387,21 @@
         <button type="button" class="btn" id="stone-picker-close">关闭</button>
       </div>
       <div class="stone-picker-filters" id="stone-picker-filters">
-        <button type="button" class="btn active" data-picker-filter="all">全部</button>
-        <button type="button" class="btn" data-picker-filter="treasure">珍品</button>
-        <button type="button" class="btn" data-picker-filter="seal">玉玺</button>
-        <button type="button" class="btn" data-picker-filter="crown1">1皇冠</button>
-        <button type="button" class="btn" data-picker-filter="crown2">2皇冠</button>
-        <button type="button" class="btn" data-picker-filter="crown3">3皇冠</button>
-        <button type="button" class="btn" data-picker-filter="crown4">4皇冠</button>
+        <div class="bag-filters bag-filters-grade">
+          <button type="button" class="btn active" data-picker-grade="all">全部</button>
+          <button type="button" class="btn" data-picker-grade="rare">稀有</button>
+          <button type="button" class="btn" data-picker-grade="artifact">神器</button>
+          <button type="button" class="btn" data-picker-grade="epic">史诗</button>
+        </div>
+        <div class="bag-filters">
+          <button type="button" class="btn active" data-picker-filter="all">全部</button>
+          <button type="button" class="btn" data-picker-filter="treasure">珍品</button>
+          <button type="button" class="btn" data-picker-filter="seal">玉玺</button>
+          <button type="button" class="btn" data-picker-filter="crown1">1皇冠</button>
+          <button type="button" class="btn" data-picker-filter="crown2">2皇冠</button>
+          <button type="button" class="btn" data-picker-filter="crown3">3皇冠</button>
+          <button type="button" class="btn" data-picker-filter="crown4">4皇冠</button>
+        </div>
       </div>
       <div id="stone-picker-list" class="stone-picker-list"></div>
     </div>

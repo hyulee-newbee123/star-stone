@@ -350,10 +350,11 @@ button.btn:disabled {
 
 .bag-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 6px;
   margin-bottom: 8px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .bag-filters { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -362,6 +363,27 @@ button.btn:disabled {
   border-color: var(--gold);
   color: var(--gold-bright);
   background: rgba(214, 177, 90, 0.12);
+}
+
+.bag-filters-grade [data-bag-grade="rare"].active,
+.bag-filters-grade [data-picker-grade="rare"].active {
+  border-color: var(--rare);
+  color: var(--rare);
+  background: color-mix(in srgb, var(--rare) 16%, transparent);
+}
+
+.bag-filters-grade [data-bag-grade="artifact"].active,
+.bag-filters-grade [data-picker-grade="artifact"].active {
+  border-color: var(--artifact);
+  color: var(--artifact);
+  background: color-mix(in srgb, var(--artifact) 16%, transparent);
+}
+
+.bag-filters-grade [data-bag-grade="epic"].active,
+.bag-filters-grade [data-picker-grade="epic"].active {
+  border-color: var(--epic);
+  color: var(--epic);
+  background: color-mix(in srgb, var(--epic) 16%, transparent);
 }
 
 .bag-hint { font-size: 11px; margin-bottom: 10px; }
@@ -1449,7 +1471,8 @@ footer.note a:hover { border-bottom: 1px solid var(--gold); }
 
 .stone-picker-filters {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 6px;
   margin-bottom: 10px;
 }
