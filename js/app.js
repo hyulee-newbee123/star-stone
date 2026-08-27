@@ -468,6 +468,23 @@ function doCustom() {
   refresh();
 }
 
+function shuffleCopy(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function consumeAffix(pool, drawn) {
+  if (!pool.length || !drawn) return;
+  let idx = drawn.id ? pool.findIndex((a) => a.id === drawn.id) : -1;
+  if (idx < 0) idx = pool.findIndex((a) => a.typeId === drawn.typeId && a.rarity === drawn.rarity);
+  if (idx < 0) idx = pool.findIndex((a) => a.typeId === drawn.typeId);
+  if (idx >= 0) pool.splice(idx, 1);
+}
+
 function randomReelAffix() {
   const type = pick(AFFIX_CONFIG);
   const rarity = pick(EMBRYO_RARITIES);
@@ -481,9 +498,17 @@ function reelItemHTML(affix) {
   </div>`;
 }
 
-function fillReelStrip(reel) {
-  const items = Array.from({ length: 12 }, randomReelAffix);
-  $(".fuse-reel-strip", reel).innerHTML = items.map(reelItemHTML).join("");
+function fillReelStrip(reel, pool) {
+  const source = pool.length ? pool : [randomReelAffix()];
+  const cycle = shuffleCopy(source);
+  const items = cycle.concat(cycle);
+  const strip = $(".fuse-reel-strip", reel);
+  strip.innerHTML = items.map(reelItemHTML).join("");
+  strip.style.setProperty("--reel-step", `${cycle.length * 48}px`);
+  strip.style.setProperty("--reel-duration", `${Math.max(0.22, cycle.length * 0.11)}s`);
+  reel.classList.remove("rolling");
+  void strip.offsetWidth;
+  reel.classList.add("rolling");
 }
 
 function lockReel(reel, affix) {
@@ -496,7 +521,7 @@ function lockReel(reel, affix) {
   sfx("reelLock", affix);
 }
 
-function playFuseReveal(stone) {
+function playFuseReveal(stone, sourcePool = []) {
   const overlay = $("#fuse-reveal");
   const g = GRADE_META[stone.grade];
   overlay.innerHTML = `
@@ -521,8 +546,14 @@ function playFuseReveal(stone) {
   overlay.classList.add("show");
   sfx("fuseStart");
 
+  const remaining = sourcePool.map(cloneAffix);
   const reels = $$(".fuse-reel", overlay);
-  reels.forEach(fillReelStrip);
+  const spinOpenReels = () => {
+    reels.forEach((reel) => {
+      if (!reel.classList.contains("locked")) fillReelStrip(reel, remaining);
+    });
+  };
+  spinOpenReels();
 
   return new Promise((resolve) => {
     let settled = false;
@@ -554,8 +585,15 @@ function playFuseReveal(stone) {
       requestAnimationFrame(() => tags.classList.add("show"));
     };
 
-    stone.affixes.forEach((affix, i) => {
-      timers.push(setTimeout(() => lockReel(reels[i], affix), 720 + i * 640));
+    const lockSlot = (i) => {
+      const affix = stone.affixes[i];
+      lockReel(reels[i], affix);
+      consumeAffix(remaining, affix);
+      spinOpenReels();
+    };
+
+    stone.affixes.forEach((_, i) => {
+      timers.push(setTimeout(() => lockSlot(i), 720 + i * 640));
     });
 
     timers.push(
@@ -586,6 +624,7 @@ async function doFuse() {
   if (!t || !m) return toast("请先指定目标石与材料石", "deny");
   const useRing = $("#use-ring").checked;
   const before = `${stoneTitle(t)} + ${stoneTitle(m)}`;
+  const sourcePool = [...t.affixes, ...m.affixes].map(cloneAffix);
   const { result, error } = synthesize(t, m, useRing);
   if (error) return toast(error, "deny");
 
@@ -610,7 +649,7 @@ async function doFuse() {
   btn.disabled = true;
   btn.textContent = "凝结中…";
 
-  await playFuseReveal(result);
+  await playFuseReveal(result, sourcePool);
 
   state.fusing = false;
   btn.disabled = false;
@@ -634,7 +673,10 @@ function fillHammerStrip(reel, typeId) {
     const rarity = pick(pool);
     return { typeId, rarity, crown: shouldHaveCrown(getAffixType(typeId)) };
   });
-  $(".fuse-reel-strip", reel).innerHTML = items.map(reelItemHTML).join("");
+  const strip = $(".fuse-reel-strip", reel);
+  strip.innerHTML = items.map(reelItemHTML).join("");
+  strip.style.setProperty("--reel-step", "48px");
+  strip.style.setProperty("--reel-duration", "0.14s");
 }
 
 function lockHammerReel(reel, before, after) {

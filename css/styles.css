@@ -878,12 +878,12 @@ button.btn:disabled {
 }
 
 .fuse-reel.rolling .fuse-reel-strip {
-  animation: reelSpin 0.14s linear infinite;
+  animation: reelSpin var(--reel-duration, 0.14s) linear infinite;
 }
 
 @keyframes reelSpin {
   from { transform: translateY(0); }
-  to { transform: translateY(-48px); }
+  to { transform: translateY(calc(-1 * var(--reel-step, 48px))); }
 }
 
 .fuse-reel-item {
