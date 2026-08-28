@@ -1289,36 +1289,9 @@ button.btn:disabled {
   100% { transform: scale(1); filter: none; }
 }
 
-body.seal-shake .app,
-body.origin-shake .app {
-  animation: fxShake 0.1s linear 14;
-}
-
-body.origin-shake-hard .app {
-  animation: fxShakeHard 0.08s linear 18;
-}
-
-@keyframes fxShake {
-  0%, 100% { transform: translate(0, 0) rotate(0); }
-  25% { transform: translate(-10px, 5px) rotate(-0.45deg); }
-  50% { transform: translate(11px, -6px) rotate(0.5deg); }
-  75% { transform: translate(-7px, -4px) rotate(-0.3deg); }
-}
-
-@keyframes fxShakeHard {
-  0%, 100% { transform: translate(0, 0) rotate(0); }
-  20% { transform: translate(-16px, 8px) rotate(-0.7deg); }
-  40% { transform: translate(18px, -10px) rotate(0.8deg); }
-  60% { transform: translate(-12px, -8px) rotate(-0.5deg); }
-  80% { transform: translate(13px, 7px) rotate(0.55deg); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .seal-rays,
   .origin-rays { animation: none !important; }
-  body.seal-shake .app,
-  body.origin-shake .app,
-  body.origin-shake-hard .app { animation: none !important; }
 }
 
 .empty {

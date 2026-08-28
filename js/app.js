@@ -701,10 +701,8 @@ function flashSeal() {
   const el = $("#seal-flash");
   fillBurstLayer($("#seal-sparks"), 56, 0.22);
   replayOverlay(el);
-  document.body.classList.add("seal-shake");
   setTimeout(() => {
     el.classList.remove("show");
-    document.body.classList.remove("seal-shake");
     const sparks = $("#seal-sparks");
     if (sparks) sparks.innerHTML = "";
   }, 2200);
@@ -748,19 +746,14 @@ function playOriginGodFlash() {
   const box = $("#origin-sparks");
   fillBurstLayer(box, 84, 0.38);
   replayOverlay(el);
-  document.body.classList.add("origin-shake");
   const boomT = setTimeout(() => {
     el.classList.add("boom");
     fillBurstLayer(box, 96, 0.45);
-    document.body.classList.remove("origin-shake");
-    void document.body.offsetWidth;
-    document.body.classList.add("origin-shake", "origin-shake-hard");
   }, 1720);
   return new Promise((resolve) => {
     setTimeout(() => {
       clearTimeout(boomT);
       el.classList.remove("show", "boom");
-      document.body.classList.remove("origin-shake", "origin-shake-hard");
       box.innerHTML = "";
       resolve();
     }, 4000);
