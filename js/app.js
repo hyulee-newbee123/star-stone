@@ -232,7 +232,7 @@ function renderSockets() {
     : `<div class="empty socket-empty"><span>从背包指定材料石<br>词条并入抽取池</span><button type="button" class="btn gold socket-pick">选择</button></div>`;
 
   if (t && m) renderLiveOdds(t, m);
-  else $("#live-odds").innerHTML = `<div class="hint">放入双石后，这里会显示本次合成的技攻分布。</div>`;
+  else $("#live-odds").innerHTML = `<div class="hint">放入双石后，这里会显示本次合成的皇冠分布。</div>`;
 }
 
 function renderHistory() {
@@ -256,30 +256,25 @@ function renderHistory() {
 }
 
 function renderLiveOdds(t, m) {
-  const odds = skillOdds(t.grade, skillCount(t), m.grade, skillCount(m));
+  const odds = skillOdds(t.grade, crownCount(t), m.grade, crownCount(m));
   const rows = odds.dist
     .filter((d) => d.p > 1e-10)
     .map((d) => {
       const pct = (d.p * 100).toFixed(1);
       return `<div class="bar-row">
-        <span>${d.k} 技攻</span>
+        <span>${d.k} 皇冠</span>
         <div class="bar"><i style="width:${(d.p * 100).toFixed(1)}%"></i></div>
         <span>${pct}%</span>
       </div>`;
     })
     .join("");
-  const sealNote =
-    t.grade === "epic"
-      ? `<div class="hint">抽中 4 技攻 <b style="color:var(--gold-bright)">${(odds.dist[4]?.p * 100 || 0).toFixed(1)}%</b>。玉玺还要求这 4 条都是史诗及以上品质。</div>`
-      : "";
   $("#live-odds").innerHTML = `
     <div class="odds-card">
       <div class="hint" style="margin-bottom:8px">
         官方单槽：目标词条 ${fmtPct(odds.weights.display.target)} · 材料词条 ${fmtPct(odds.weights.display.material)}
-        <br>首槽技攻 ${(odds.pSlot * 100).toFixed(2)}% · 不放回抽 ${odds.draws} 条
+        <br>首槽皇冠 ${(odds.pSlot * 100).toFixed(2)}% · 不放回抽 ${odds.draws} 条
       </div>
       ${rows}
-      ${sealNote}
     </div>`;
 }
 
