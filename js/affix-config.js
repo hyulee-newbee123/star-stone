@@ -138,7 +138,7 @@ const HAMMER_COUNT_TABLE = {
 const HAMMER_DOUBLE_P = 0.4;
 
 const COST = {
-  generate: { 1: 60, 2: 950, 3: 6000, 4: 30000 },
+  generate: { 1: 50, 2: 648, 3: 4300, 4: 30000 },
   ring: 150,
   blade: 2000,
   finalBlade: 3000,
