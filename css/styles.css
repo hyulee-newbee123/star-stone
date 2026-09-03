@@ -500,17 +500,22 @@ button.btn:disabled {
 
 .can-page {
   display: grid;
-  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   grid-template-areas:
-    "play tally"
-    "odds odds";
-  gap: 16px 24px;
+    "play"
+    "tally"
+    "odds";
+  gap: 16px;
   align-items: start;
 }
 
 .can-play {
   grid-area: play;
   text-align: center;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .can-tally-col { grid-area: tally; }
@@ -544,6 +549,7 @@ button.btn:disabled {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  overflow: hidden;
 }
 
 .can-glow {
@@ -2572,13 +2578,6 @@ body.picker-open {
       "side";
   }
 
-  .can-page {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "play"
-      "tally"
-      "odds";
-  }
 }
 
 @media (max-width: 900px) {
@@ -2866,11 +2865,6 @@ body.picker-open {
   }
 
   .can-page {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "play"
-      "tally"
-      "odds";
     gap: 14px;
   }
 
