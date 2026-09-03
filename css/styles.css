@@ -1052,7 +1052,13 @@ button.btn:disabled {
 
 .can-odds-name .ico-bind { display: none; }
 
-.can-odds-cards { display: none; }
+.can-odds-table { display: none; }
+
+.can-odds-cards {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+}
 
 .can-odds-card {
   display: flex;
@@ -2874,10 +2880,6 @@ body.picker-open {
   .can-stage { height: 156px; margin: 4px 0 8px; }
   .can-jar { width: 96px; height: 136px; }
 
-  #panel-can {
-    overflow-x: hidden;
-  }
-
   .can-actions {
     display: flex;
     flex-wrap: wrap;
@@ -2899,14 +2901,6 @@ body.picker-open {
   .can-actions .can-until,
   .btn-row.can-actions .can-until {
     flex: 1 1 100%;
-  }
-
-  .can-odds-table { display: none; }
-
-  .can-odds-cards {
-    display: grid;
-    gap: 8px;
-    margin: 8px 0 16px;
   }
 
   .can-modal {
