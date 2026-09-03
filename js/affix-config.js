@@ -150,3 +150,30 @@ const SYNTH_COST_EXPECT = {
   3: { ones: 127 / 3, fuses: 833 / 24 },
   4: { ones: 69440 / 357, fuses: 8330 / 51 },
 };
+
+const CAN_QUALITY_META = {
+  blue: { name: "蓝色" },
+  purple: { name: "紫色" },
+  pink: { name: "粉色" },
+  yellow: { name: "黄色" },
+  rainbow: { name: "彩色" },
+};
+
+/**
+ * 星尘罐掉落。开罐按 weight 加权随机，概率 = 本条 weight / 全部 weight 之和。
+ * 总权重为 100，所以 weight 就是百分率。改某一条时把其它条的差额补回 100 即可。
+ */
+const CAN_DROPS = [
+  { id: "gold_100w", name: "100万金币", count: 1, bind: true, quality: "blue", weight: 32.009603, icon: "gold" },
+  { id: "shard_10_bind", name: "星源石碎片", count: 10, bind: true, quality: "purple", weight: 30.409123, icon: "shard" },
+  { id: "catalyst_trade", name: "洗练催化石", count: 1, bind: false, quality: "pink", weight: 6.661999, icon: "catalyst-t" },
+  { id: "lock_trade", name: "洗练稳定剂", count: 1, bind: false, quality: "pink", weight: 5.001500, icon: "lock-t" },
+  { id: "ring_trade", name: "合成固能环", count: 1, bind: false, quality: "pink", weight: 0.500150, icon: "ring-t" },
+  { id: "ore_trade", name: "矿晶提纯剂", count: 1, bind: false, quality: "yellow", weight: 0.330099, icon: "ore-t" },
+  { id: "blade_trade", name: "锤炼之刃", count: 1, bind: false, quality: "rainbow", weight: 0.030009, icon: "blade-t" },
+  { id: "catalyst_bind", name: "洗练催化石", count: 1, bind: true, quality: "pink", weight: 13.334000, icon: "catalyst-b" },
+  { id: "lock_bind", name: "洗练稳定剂", count: 1, bind: true, quality: "pink", weight: 10.003001, icon: "lock-b" },
+  { id: "ring_bind", name: "合成固能环", count: 1, bind: true, quality: "pink", weight: 1.000300, icon: "ring-b" },
+  { id: "ore_bind", name: "矿晶提纯剂", count: 1, bind: true, quality: "yellow", weight: 0.660198, icon: "ore-b" },
+  { id: "blade_bind", name: "锤炼之刃", count: 1, bind: true, quality: "rainbow", weight: 0.060018, icon: "blade-b" },
+];

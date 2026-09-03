@@ -48,6 +48,23 @@ function weightedPick(table) {
   return entries[entries.length - 1][0];
 }
 
+function canWeightTotal() {
+  return CAN_DROPS.reduce((sum, d) => sum + d.weight, 0);
+}
+
+function canDropRate(drop) {
+  return drop.weight / (canWeightTotal() || 1);
+}
+
+function pickCanDrop() {
+  const table = {};
+  CAN_DROPS.forEach((d) => {
+    table[d.id] = d.weight;
+  });
+  const id = weightedPick(table);
+  return CAN_DROPS.find((d) => d.id === id) || CAN_DROPS[0];
+}
+
 function combinations(n, k) {
   if (k < 0 || k > n) return 0;
   if (k === 0 || k === n) return 1;

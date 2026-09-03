@@ -302,6 +302,19 @@
     craft() {
       chord([523, 659, 784], 0.28, 0.09);
     },
+    canShake() {
+      [0, 0.12, 0.24, 0.36].forEach((d) => {
+        setTimeout(() => burst(220 + d * 400, 0.08, 500), d * 1000);
+      });
+    },
+    canOpen() {
+      burst(380, 0.14, 700);
+      tone("triangle", 520, 0.16, 0.09);
+    },
+    canRare() {
+      chord([392, 523, 659, 784], 0.32, 0.1);
+      sweep("sine", 280, 880, 0.28, 0.08);
+    },
     batch() {
       [0, 0.05, 0.1, 0.16, 0.22].forEach((d, i) => {
         setTimeout(() => tone("triangle", 480 + i * 90, 0.08, 0.07), d * 1000);

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#07060c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>星源工坊 · 星源石模拟合成器 v1.4</title>
+  <title>星源工坊 · 星源石模拟合成器 v2.0</title>
   <meta name="description" content="星源石合成 / 洗练 / 锤炼模拟器。按官方权重不放回演算概率，公益开源，仅供娱乐。" />
-  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v1.4" />
+  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v2.0" />
   <meta property="og:description" content="自定义胚子、合成、洗练、锤炼与玉玺演算。非官方模拟器，仅供娱乐。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://hyulee-newbee123.github.io/star-stone/" />
@@ -18,38 +18,52 @@
 </head>
 <body>
   <canvas id="sky"></canvas>
+  <button type="button" class="nav-toggle" id="btn-nav-open" title="打开菜单">菜单</button>
   <button type="button" class="sfx-toggle" id="btn-sfx" title="循环：开 / 低 / 关">音效 开</button>
   <div class="app">
     <header class="hero">
       <div class="eyebrow">时空秘境 · 星核工坊</div>
       <div class="hero-title">
         <h1>星源石合成器</h1>
-        <span class="ver">v1.4</span>
+        <span class="ver">v2.0</span>
       </div>
-      <p>自定义胚子 · 合成 · 洗练 · 锤炼 · 玉玺演算</p>
-      <div class="stats-row">
-        <div class="stats-bar">
-          <span class="stat">合成 <b id="stat-fuses">0</b> 次</span>
-          <span class="stat" title="累计获得的玉玺（4 条史诗及以上技攻）">玉玺 <b id="stat-seals">0</b> 颗</span>
-          <span class="stat">四起源 <b id="stat-origins">0</b> 颗</span>
-          <span class="stat">背包 <b id="stat-bag">0</b> 颗</span>
-          <span class="stat" title="累计获得的 2 条史诗及以上技攻石">2史技攻 <b id="stat-skill2">0</b></span>
-          <span class="stat" title="累计获得的 3 条史诗及以上技攻石">3史技攻 <b id="stat-skill3">0</b></span>
-          <span class="stat" id="stat-cost-wrap" title="">成本 <b id="stat-cost">0</b></span>
+      <p class="hero-sub">自定义胚子 · 合成 · 洗练 · 锤炼 · 玉玺演算</p>
+      <div class="hero-spent">
+        <div class="hero-spent-label">工坊记录</div>
+        <div class="wallet-list">
+          <div class="pill">合成 <span class="num" id="stat-fuses">0</span></div>
+          <div class="pill" title="累计获得的玉玺（4 条史诗及以上技攻）">玉玺 <span class="num" id="stat-seals">0</span></div>
+          <div class="pill">四起源 <span class="num" id="stat-origins">0</span></div>
+          <div class="pill">背包 <span class="num" id="stat-bag">0</span></div>
+          <div class="pill" title="累计获得的 2 条史诗及以上技攻石">2史技 <span class="num" id="stat-skill2">0</span></div>
+          <div class="pill" title="累计获得的 3 条史诗及以上技攻石">3史技 <span class="num" id="stat-skill3">0</span></div>
+          <div class="pill" id="stat-cost-wrap" title="">成本 <span class="num" id="stat-cost">0</span></div>
+          <button type="button" class="pill pill-clear" data-clear-bag>清空</button>
         </div>
-        <button type="button" class="btn danger stats-clear" data-clear-bag>清空</button>
       </div>
     </header>
     <div class="ornament"></div>
 
-    <nav class="tabs">
-      <button class="active" data-tab="craft">打造</button>
-      <button data-tab="forge">合成</button>
-      <button data-tab="calc">演算</button>
-      <button data-tab="wash">洗练</button>
-      <button data-tab="hammer">锤炼</button>
-      <button data-tab="rules">规则</button>
+    <div class="workspace">
+    <div class="sidenav-backdrop" id="sidenav-backdrop" hidden></div>
+    <nav class="tabs sidenav" id="sidenav" aria-label="工坊菜单">
+      <div class="sidenav-head">
+        <b>工坊菜单</b>
+      </div>
+      <div class="tabs-track sidenav-track">
+        <button type="button" class="active" data-tab="craft">打造</button>
+        <button type="button" data-tab="forge">合成</button>
+        <button type="button" data-tab="wash">洗练</button>
+        <button type="button" data-tab="hammer">锤炼</button>
+        <button type="button" data-tab="can">星尘罐</button>
+        <button type="button" data-tab="calc">演算</button>
+        <button type="button" data-tab="rules">规则</button>
+      </div>
     </nav>
+    <div class="workspace-main">
+    <div class="nav-bar">
+      <span id="nav-now">打造</span>
+    </div>
 
     <section id="panel-craft" class="panel active">
       <div class="craft-page">
@@ -257,11 +271,65 @@
       <div id="hammer-stone" class="hammer-list"></div>
     </section>
 
+    <section id="panel-can" class="panel">
+      <div class="can-page">
+        <div class="can-play">
+          <h2>星尘罐</h2>
+          <p class="hint can-hint-desk">单开、10 连、100 连按同一权重独立抽取。「一直开到锤炼之刃」会连抽到出为止。开出后弹窗展示，不进背包、不计成本。</p>
+          <p class="hint can-hint-phone">按权重开罐，也可一直开到锤炼之刃。结果弹窗汇总。</p>
+          <div class="can-stage" id="can-stage">
+            <div class="can-glow"></div>
+            <div class="can-jar" id="can-jar">
+              <div class="can-lid"></div>
+              <div class="can-body">
+                <span class="can-mark">星尘</span>
+              </div>
+            </div>
+          </div>
+          <div class="btn-row can-actions">
+            <button type="button" class="btn gold" data-can-n="1">开罐</button>
+            <button type="button" class="btn gold" data-can-n="10">10连</button>
+            <button type="button" class="btn gold" data-can-n="100">100连</button>
+            <button type="button" class="btn gold can-until" data-can-until="blade">一直开到锤炼之刃</button>
+          </div>
+        </div>
+        <div class="can-tally-col">
+          <div class="bag-head">
+            <h2>开罐汇总</h2>
+            <span class="bag-summary" id="can-tally-total">共开 0 次</span>
+          </div>
+          <p class="hint">只在本页统计，不进顶栏。点清空只清这里。</p>
+          <div class="can-tally" id="can-tally"></div>
+          <button type="button" class="btn danger" id="btn-can-clear">清空汇总</button>
+        </div>
+        <div class="can-odds">
+          <h2>掉落表</h2>
+          <p class="hint can-hint-desk">总权重 100，weight 就是百分率。改 <code>js/affix-config.js</code> 里的 <code>CAN_DROPS</code> 即可。</p>
+          <div class="can-odds-cards" id="can-odds-cards"></div>
+          <div class="value-table-wrap can-odds-table">
+            <table class="value-table">
+              <thead>
+                <tr>
+                  <th>道具</th>
+                  <th>绑定</th>
+                  <th>品质</th>
+                  <th>权重</th>
+                  <th>概率</th>
+                </tr>
+              </thead>
+              <tbody id="can-odds-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="panel-rules" class="panel">
       <h2>模拟规则</h2>
       <div class="rules">
-        <p><b>版本更新 · v1.4</b></p>
-        <p>生成成本调整为 1 史诗技攻 50 块钱、2 史诗技攻 750 块钱、3 史诗技攻 4300 块钱。4 史诗技攻与锤炼相关花费不变。完整记录见仓库里的 <code>更新日志.txt</code>。</p>
+        <p><b>星尘罐</b>：按 <code>CAN_DROPS</code> 加权开罐，总权重 100，weight 即百分率。支持单开、10 连、100 连、一直开到锤炼之刃。结果弹窗只汇总可交易 / 账号绑定，不逐条列出。本页单独统计各道具数量，不进背包、不计顶栏成本，顶栏「清空」也不影响本页。</p>
+        <p><b>版本更新 · v2.0</b></p>
+        <p>新增星尘罐；工坊菜单改到左侧，手机左上角常驻开关；顶栏记录改成胶囊条。完整记录见仓库里的 <code>更新日志.txt</code>。</p>
         <p><b>品级槽位</b>：稀有 2 条 · 神器 3 条 · 史诗 4 条。合成结果继承目标石品级与星序。</p>
         <p><b>合成</b>：从目标石与材料石的全部词条组成抽取池，按官方权重不放回抽取到目标石槽位数。同品级时每条均等；不同品级时目标与材料权重不同。同一条来源不会被抽中两次，因此 3 史诗技攻 + 3 史诗技攻不可能出 1 技攻。</p>
         <p><b>合成官方权重</b>：下表为该石上「每一条」在单槽被抽中的公示值（除尽后四舍五入）。抽取和演算会按两石合计 100% 归一，不因四舍五入亏掉或多出一点。</p>
@@ -371,6 +439,8 @@
         </div>
       </div>
     </section>
+    </div>
+    </div>
 
     <footer class="note">
       <p class="note-author">作者 李积极</p>
@@ -406,6 +476,42 @@
         </div>
       </div>
       <div id="stone-picker-list" class="stone-picker-list"></div>
+    </div>
+  </div>
+  <div class="can-run" id="can-run" hidden>
+    <div class="can-run-backdrop"></div>
+    <div class="can-run-panel" role="dialog" aria-modal="true" aria-labelledby="can-run-title">
+      <div class="can-run-kicker" id="can-run-title">正在开到锤炼之刃</div>
+      <div class="can-run-count">目前已经开了 <b id="can-run-n">0</b> 次</div>
+      <button type="button" class="btn danger" id="btn-can-stop">停止</button>
+    </div>
+  </div>
+  <div class="can-modal" id="can-modal" hidden>
+    <div class="can-modal-backdrop" data-can-close></div>
+    <div class="can-modal-panel" role="dialog" aria-modal="true" aria-labelledby="can-modal-title">
+      <div class="can-modal-head">
+        <h2 id="can-modal-title">开罐结果</h2>
+        <button type="button" class="btn" data-can-close>关闭</button>
+      </div>
+      <div class="can-modal-sum" id="can-modal-sum"></div>
+      <div class="can-modal-actions">
+        <button type="button" class="btn gold" id="btn-can-again">再开一次</button>
+        <button type="button" class="btn" data-can-close>收下</button>
+      </div>
+    </div>
+  </div>
+  <div class="can-king-flash" id="can-king-flash">
+    <div class="fx-burst can-king-burst"></div>
+    <div class="fx-burst can-king-burst-2"></div>
+    <div class="fx-rays can-king-rays"></div>
+    <div class="fx-ring can-king-ring"></div>
+    <div class="fx-ring can-king-ring delay-a"></div>
+    <div class="fx-ring can-king-ring delay-b"></div>
+    <div class="can-king-sparks" id="can-king-sparks"></div>
+    <div class="can-king-mark-wrap">
+      <div class="can-king-sub">星尘盖印</div>
+      <div class="can-king-mark">星尘罐王</div>
+      <div class="can-king-foot">STAR CAN · KING</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>

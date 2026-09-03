@@ -15,6 +15,13 @@ const state = {
   pickerSlot: null,
   pickerFilter: "all",
   pickerGradeFilter: "all",
+  canOpening: false,
+  canCounts: {},
+  canPulls: 0,
+  canLastCount: 1,
+  canLastUntil: "",
+  canStop: false,
+  canUntilStopped: false,
 };
 
 function $(sel, root = document) {
@@ -46,6 +53,8 @@ function save() {
       bag: state.bag.map(serializeStone),
       stats: state.stats,
       history: state.history.slice(0, 20),
+      canCounts: state.canCounts,
+      canPulls: state.canPulls,
     })
   );
 }
@@ -57,6 +66,8 @@ function load() {
     state.bag = (raw.bag || []).map(restoreStone);
     state.stats = { fuses: 0, seals: 0, treasures: 0, origins: 0, skill2: 0, skill3: 0, cost: 0, ...raw.stats };
     state.history = raw.history || [];
+    state.canCounts = raw.canCounts && typeof raw.canCounts === "object" ? raw.canCounts : {};
+    state.canPulls = Number(raw.canPulls) || 0;
   } catch {
     /* ignore broken save */
   }
@@ -373,11 +384,49 @@ let pickerDrag = { y: 0, moved: false };
 function switchTab(tab) {
   const panel = $(`#panel-${tab}`);
   if (!panel) return;
-  $$(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  $$(".tabs [data-tab]").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   $$(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${tab}`));
-  if (window.matchMedia("(max-width: 720px)").matches) {
-    $(".tabs")?.scrollIntoView({ block: "start" });
+  const current = $(`.tabs [data-tab="${tab}"]`);
+  const now = $("#nav-now");
+  if (now) now.textContent = current?.textContent?.trim() || "";
+  closeSidenav();
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    $(".nav-bar")?.scrollIntoView({ block: "start" });
   }
+}
+
+function syncNavToggle() {
+  const btn = $("#btn-nav-open");
+  if (!btn) return;
+  const open = document.body.classList.contains("sidenav-open");
+  btn.textContent = open ? "关闭" : "菜单";
+  btn.title = open ? "关闭菜单" : "打开菜单";
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function openSidenav() {
+  const bar = $("#sidenav-backdrop");
+  document.body.classList.add("sidenav-open");
+  if (bar) {
+    bar.hidden = false;
+    bar.classList.add("show");
+  }
+  syncNavToggle();
+}
+
+function closeSidenav() {
+  const bar = $("#sidenav-backdrop");
+  document.body.classList.remove("sidenav-open");
+  if (bar) {
+    bar.classList.remove("show");
+    bar.hidden = true;
+  }
+  syncNavToggle();
+}
+
+function toggleSidenav() {
+  if (document.body.classList.contains("sidenav-open")) closeSidenav();
+  else openSidenav();
 }
 
 function refresh() {
@@ -1091,7 +1140,12 @@ function bind() {
   document.addEventListener("pointerdown", unlockAudio);
   document.addEventListener("keydown", (e) => {
     unlockAudio();
-    if (e.key === "Escape" && state.pickerSlot) closeStonePicker();
+    if (e.key === "Escape") {
+      if (!$("#can-run")?.hidden) stopCanRun();
+      else if (!$("#can-modal")?.hidden) closeCanModal();
+      else if (state.pickerSlot) closeStonePicker();
+      else if (document.body.classList.contains("sidenav-open")) closeSidenav();
+    }
   });
   document.addEventListener("click", (e) => {
     if (e.target.closest("#btn-sfx")) return;
@@ -1105,12 +1159,17 @@ function bind() {
     if (e.target.matches("input[type='checkbox']")) sfx("check");
   });
 
-  $$(".tabs button").forEach((btn) => {
+  $$(".tabs button[data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       switchTab(btn.dataset.tab);
       sfx("tab");
     });
   });
+  $("#btn-nav-open")?.addEventListener("click", () => {
+    toggleSidenav();
+    sfx("tab");
+  });
+  $("#sidenav-backdrop")?.addEventListener("click", closeSidenav);
 
   $$("[data-go-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1309,6 +1368,18 @@ function bind() {
     refresh();
   });
   $("#btn-hammer-epic4").addEventListener("click", () => doBatchEpicSkill(10, 4));
+  $$("[data-can-n]").forEach((btn) => {
+    btn.addEventListener("click", () => doOpenCan(Number(btn.dataset.canN) || 1));
+  });
+  $$("[data-can-until]").forEach((btn) => {
+    btn.addEventListener("click", () => doOpenCan(0, btn.dataset.canUntil));
+  });
+  $("#btn-can-again")?.addEventListener("click", () => doOpenCan(state.canLastCount || 1, state.canLastUntil));
+  $$("[data-can-close]").forEach((el) => {
+    el.addEventListener("click", closeCanModal);
+  });
+  $("#btn-can-clear")?.addEventListener("click", clearCanTally);
+  $("#btn-can-stop")?.addEventListener("click", stopCanRun);
   $("#btn-calc").addEventListener("click", runCalc);
   $("#btn-batch").addEventListener("click", runBatch);
   $$("[data-clear-bag]").forEach((el) => {
@@ -1475,6 +1546,314 @@ function fillConfigCopy() {
   }
 }
 
+function canIconHTML(drop) {
+  const bind = drop.bind ? `<span class="ico-bind" title="账号绑定">绑</span>` : "";
+  return `<span class="can-ico ico-${drop.icon} q-${drop.quality}${drop.bind ? " is-bind" : ""}" aria-hidden="true"><i class="ico-glow"></i><i class="ico-a"></i><i class="ico-b"></i><i class="ico-c"></i><i class="ico-d"></i><i class="ico-shine"></i>${bind}</span>`;
+}
+
+function canDropTitle(drop) {
+  const qty = drop.count > 1 ? `*${drop.count}` : "";
+  return `${drop.name}${qty}`;
+}
+
+function canPrizeHTML(drop, compact = false) {
+  const q = CAN_QUALITY_META[drop.quality] || { name: drop.quality };
+  const bind = drop.bind ? "账号绑定" : "可交易";
+  return `<div class="can-prize q-${drop.quality}">
+    ${canIconHTML(drop)}
+    <div class="can-prize-copy">
+      <b>${canDropTitle(drop)}</b>
+      <span>${q.name} · ${bind}${compact ? "" : ` · ${+(canDropRate(drop) * 100).toFixed(4)}%`}</span>
+    </div>
+  </div>`;
+}
+
+const CAN_Q_RANK = { rainbow: 0, yellow: 1, pink: 2, purple: 3, blue: 4 };
+
+function summarizeCanDrops(drops) {
+  const map = new Map();
+  for (const d of drops) {
+    const cur = map.get(d.id) || { drop: d, n: 0 };
+    cur.n += 1;
+    map.set(d.id, cur);
+  }
+  return [...map.values()].sort((a, b) => {
+    const qa = (CAN_Q_RANK[a.drop.quality] ?? 9) - (CAN_Q_RANK[b.drop.quality] ?? 9);
+    if (qa) return qa;
+    return b.n - a.n;
+  });
+}
+
+function canPullLabel(n, until) {
+  if (until === "blade") {
+    if (state.canUntilStopped) return `已停止 · ${n} 次`;
+    return `开到锤炼之刃 · ${n} 次`;
+  }
+  if (n >= 100) return "100连";
+  if (n >= 10) return "10连";
+  return "单开";
+}
+
+function isCanBlade(drop) {
+  return drop && String(drop.id).startsWith("blade_");
+}
+
+function showCanRun(n) {
+  const box = $("#can-run");
+  const num = $("#can-run-n");
+  if (num) num.textContent = String(n);
+  if (!box) return;
+  box.hidden = false;
+  box.classList.add("show");
+  document.body.classList.add("can-run-open");
+}
+
+function hideCanRun() {
+  const box = $("#can-run");
+  if (!box) return;
+  box.hidden = true;
+  box.classList.remove("show");
+  document.body.classList.remove("can-run-open");
+}
+
+function stopCanRun() {
+  if (!$("#can-run")?.hidden) state.canStop = true;
+}
+
+function waitFrame() {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+async function openUntilBladeLive(limit = 200000) {
+  state.canStop = false;
+  const drops = [];
+  const chunk = 80;
+  showCanRun(0);
+  await waitFrame();
+  while (!state.canStop && drops.length < limit) {
+    const take = Math.min(chunk, limit - drops.length);
+    let hit = false;
+    for (let i = 0; i < take; i++) {
+      const drop = pickCanDrop();
+      drops.push(drop);
+      if (isCanBlade(drop)) {
+        hit = true;
+        break;
+      }
+    }
+    showCanRun(drops.length);
+    if (hit) break;
+    await waitFrame();
+  }
+  hideCanRun();
+  const stopped = state.canStop || !drops.some(isCanBlade);
+  state.canStop = false;
+  return { drops, stopped };
+}
+
+function setCanButtonsDisabled(on) {
+  $$("[data-can-n], [data-can-until], #btn-can-again").forEach((btn) => {
+    btn.disabled = on;
+  });
+}
+
+function closeCanModal() {
+  const box = $("#can-modal");
+  if (!box) return;
+  box.hidden = true;
+  box.classList.remove("show", "glow-pink", "glow-yellow", "glow-rainbow");
+  document.body.classList.remove("can-modal-open");
+  const king = $("#can-king-flash");
+  if (king) king.classList.remove("show");
+}
+
+function canBindTag(drop) {
+  return drop.bind
+    ? `<span class="can-bind-tag is-bind">账号绑定</span>`
+    : `<span class="can-bind-tag is-trade">可交易</span>`;
+}
+
+function canSumRowHTML(drop, count) {
+  return `<div class="can-sum-row q-${drop.quality}">
+    ${canIconHTML(drop)}
+    <div class="can-sum-copy">
+      <b>${canDropTitle(drop)}</b>
+      ${canBindTag(drop)}
+    </div>
+    <em>×${count}</em>
+  </div>`;
+}
+
+function canGlowKind(drops) {
+  if (drops.some((d) => d.id.startsWith("blade_"))) return "rainbow";
+  if (drops.some((d) => d.id.startsWith("ore_"))) return "yellow";
+  if (drops.some((d) => d.id.startsWith("ring_"))) return "pink";
+  return "";
+}
+
+function flashCanKing() {
+  const el = $("#can-king-flash");
+  if (!el) return;
+  fillBurstLayer($("#can-king-sparks"), 64, 0.3);
+  replayOverlay(el);
+  sfx("seal");
+  clearTimeout(flashCanKing._t);
+  flashCanKing._t = setTimeout(() => {
+    el.classList.remove("show");
+    const sparks = $("#can-king-sparks");
+    if (sparks) sparks.innerHTML = "";
+  }, 2400);
+}
+
+function openCanModal(drops) {
+  const box = $("#can-modal");
+  const title = $("#can-modal-title");
+  const sum = $("#can-modal-sum");
+  const again = $("#btn-can-again");
+  if (!box || !title || !sum) return;
+  const n = drops.length;
+  const until = state.canLastUntil;
+  title.textContent = `开罐结果 · ${canPullLabel(n, until)}`;
+  if (again) {
+    again.textContent = until === "blade" ? "再开到锤炼之刃" : n === 1 ? "再开一次" : `再来${canPullLabel(n)}`;
+  }
+  const groups = summarizeCanDrops(drops);
+  const trade = groups.filter((g) => !g.drop.bind);
+  const bind = groups.filter((g) => g.drop.bind);
+  const block = (label, rows, kind) =>
+    rows.length
+      ? `<section class="can-sum-group ${kind}">
+          <h3>${label}<span>${rows.reduce((a, r) => a + r.n, 0)} 件</span></h3>
+          ${rows.map(({ drop, n: count }) => canSumRowHTML(drop, count)).join("")}
+        </section>`
+      : "";
+  sum.innerHTML = `${block("可交易", trade, "is-trade")}${block("账号绑定", bind, "is-bind")}`;
+  box.classList.remove("glow-pink", "glow-yellow", "glow-rainbow");
+  const glow = canGlowKind(drops);
+  if (glow) box.classList.add(`glow-${glow}`);
+  box.hidden = false;
+  box.classList.add("show");
+  document.body.classList.add("can-modal-open");
+  if (glow === "rainbow") flashCanKing();
+}
+
+function renderCanOdds() {
+  const body = $("#can-odds-body");
+  const cards = $("#can-odds-cards");
+  if (!body && !cards) return;
+  const rows = CAN_DROPS.map((d) => {
+    const q = CAN_QUALITY_META[d.quality] || { name: d.quality };
+    const pct = +(canDropRate(d) * 100).toFixed(6);
+    return {
+      tr: `<tr>
+        <td class="can-odds-name">${canIconHTML(d)}<span>${canDropTitle(d)}</span></td>
+        <td>${d.bind ? "账号绑定" : "可交易"}</td>
+        <td>${q.name}</td>
+        <td>${d.weight}</td>
+        <td>${pct}%</td>
+      </tr>`,
+      card: `<div class="can-odds-card q-${d.quality}">
+        ${canIconHTML(d)}
+        <div class="can-odds-copy">
+          <b>${canDropTitle(d)}</b>
+          <span>${canBindTag(d)} · ${q.name}</span>
+        </div>
+        <em>${+pct.toFixed(4)}%</em>
+      </div>`,
+    };
+  });
+  if (body) body.innerHTML = rows.map((r) => r.tr).join("");
+  if (cards) cards.innerHTML = rows.map((r) => r.card).join("");
+}
+
+function renderCanTally() {
+  const box = $("#can-tally");
+  const total = $("#can-tally-total");
+  if (total) total.textContent = `共开 ${state.canPulls} 次`;
+  if (!box) return;
+  box.innerHTML = CAN_DROPS.map((d) => {
+    const n = Number(state.canCounts[d.id]) || 0;
+    return `<div class="can-odds-card q-${d.quality}${n ? "" : " is-zero"}">
+      ${canIconHTML(d)}
+      <div class="can-odds-copy">
+        <b>${canDropTitle(d)}</b>
+        ${canBindTag(d)}
+      </div>
+      <em>×${n}</em>
+    </div>`;
+  }).join("");
+}
+
+function clearCanTally() {
+  if (!state.canPulls && !Object.values(state.canCounts).some((n) => n > 0)) {
+    return toast("汇总还是空的");
+  }
+  if (!confirm("清空本页开罐汇总？背包和顶栏统计不受影响。")) return;
+  sfx("clear");
+  state.canCounts = {};
+  state.canPulls = 0;
+  save();
+  renderCanTally();
+  toast("已清空开罐汇总");
+}
+
+function addCanTally(drops) {
+  for (const d of drops) {
+    state.canCounts[d.id] = (Number(state.canCounts[d.id]) || 0) + 1;
+  }
+  state.canPulls += drops.length;
+  save();
+  renderCanTally();
+}
+
+async function doOpenCan(count = 1, until = "") {
+  const untilBlade = until === "blade";
+  const n = untilBlade ? 0 : Math.max(1, Math.min(100, Number(count) || 1));
+  if (state.canOpening) return;
+  const jar = $("#can-jar");
+  const stage = $("#can-stage");
+  if (!jar) return;
+  state.canOpening = true;
+  state.canLastCount = n;
+  state.canLastUntil = untilBlade ? "blade" : "";
+  state.canUntilStopped = false;
+  setCanButtonsDisabled(true);
+  closeCanModal();
+  jar.classList.remove("is-open");
+  stage?.classList.remove("is-burst");
+  let drops;
+  if (untilBlade) {
+    const run = await openUntilBladeLive();
+    drops = run.drops;
+    state.canUntilStopped = run.stopped;
+    if (!drops.length) {
+      state.canOpening = false;
+      setCanButtonsDisabled(false);
+      return toast("已停止");
+    }
+  } else {
+    void jar.offsetWidth;
+    jar.classList.add("is-shake");
+    sfx("canShake");
+    await new Promise((r) => setTimeout(r, 780));
+    drops = Array.from({ length: n }, () => pickCanDrop());
+  }
+  jar.classList.remove("is-shake");
+  jar.classList.add("is-open");
+  stage?.classList.add("is-burst");
+  const rare = drops.some((d) => d.quality === "rainbow" || d.quality === "yellow");
+  if (rare) sfx("canRare");
+  else sfx("canOpen");
+  addCanTally(drops);
+  openCanModal(drops);
+  state.canOpening = false;
+  setCanButtonsDisabled(false);
+  setTimeout(() => {
+    jar.classList.remove("is-open");
+    stage?.classList.remove("is-burst");
+  }, 700);
+}
+
 function renderOddsTables() {
   const synthHTML = GRADES.flatMap((tg) =>
     GRADES.map((mg) => {
@@ -1533,6 +1912,7 @@ function renderOddsTables() {
         <td>${cell(HAMMER_COUNT_TABLE.raw, 4)}</td>
       </tr>`;
   }
+  renderCanOdds();
 }
 
 function renderAffixValueTable() {
@@ -1557,6 +1937,7 @@ initCustomForm();
 renderCustomSlots();
 renderAffixValueTable();
 renderOddsTables();
+renderCanTally();
 fillConfigCopy();
 fillSkillSelects();
 applyPreset("seal");
