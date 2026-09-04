@@ -549,3 +549,180 @@ function restoreStone(raw) {
     { washLeft: raw.washLeft, hammered: raw.hammered, finalHammered: raw.finalHammered, sealed: raw.sealed, id: raw.id }
   );
 }
+
+function sampleEpicSkillFuse(a, b) {
+  let skills = Math.max(0, Math.min(4, a | 0)) + Math.max(0, Math.min(4, b | 0));
+  let junk = 8 - skills;
+  let got = 0;
+  for (let d = 0; d < 4; d++) {
+    const tot = skills + junk;
+    if (tot <= 0) break;
+    if (rand() * tot < skills) {
+      got++;
+      skills--;
+    } else junk--;
+  }
+  return got;
+}
+
+function epicSkillFuseDist(a, b) {
+  const K = Math.max(0, a) + Math.max(0, b);
+  const dist = [0, 0, 0, 0, 0];
+  for (let k = 0; k <= 4; k++) dist[k] = hypergeometricP(K, 8, 4, k);
+  return dist;
+}
+
+function simulateEpicSkillPolicy(want, mode, maxSteps = 8000, costCap = Infinity) {
+  const inv = [0, 0, 0, 0, 0];
+  const bought = [0, 0, 0, 0, 0];
+  const fuses = {};
+  let fuseN = 0;
+  let cost = 0;
+  let steps = 0;
+  const buyBase = mode === "smart" ? 1 : mode;
+
+  const available = (k) => Math.max(0, inv[k] - (want[k] || 0));
+  const need = (k) => Math.max(0, (want[k] || 0) - inv[k]);
+  const done = () => !(need(1) || need(2) || need(3) || need(4));
+
+  const buy = (k, n = 1) => {
+    inv[k] += n;
+    bought[k] += n;
+    cost += n * COST.generate[k];
+  };
+
+  const fuse = (a, b) => {
+    inv[a]--;
+    inv[b]--;
+    const r = sampleEpicSkillFuse(a, b);
+    if (r > 0) inv[r]++;
+    fuseN++;
+    const key = `${Math.min(a, b)}+${Math.max(a, b)}`;
+    fuses[key] = (fuses[key] || 0) + 1;
+    cost += COST.ring;
+  };
+
+  const canFuse = (a, b) => (a === b ? available(a) >= 2 : available(a) >= 1 && available(b) >= 1);
+
+  const pickSmart = (t) => {
+    let best = { kind: "buy", k: t, score: COST.generate[t] };
+    for (let a = 1; a <= 4; a++) {
+      for (let b = a; b <= 4; b++) {
+        if (!canFuse(a, b)) continue;
+        const p = epicSkillFuseDist(a, b)[t];
+        if (p < 0.04) continue;
+        const score = COST.ring / p;
+        if (score < best.score) best = { kind: "fuse", a, b, score };
+      }
+    }
+    if (best.kind === "buy" && t > 1) {
+      const have = available(t - 1);
+      const p = epicSkillFuseDist(t - 1, t - 1)[t];
+      if (p > 0) {
+        const acquire = (2 - Math.min(2, have)) * COST.generate[t - 1] + COST.ring;
+        const score = acquire / p;
+        if (score < best.score) {
+          if (have >= 2) best = { kind: "fuse", a: t - 1, b: t - 1, score };
+          else best = { kind: "buy", k: t - 1, score };
+        }
+      }
+    }
+    return best;
+  };
+
+  while (!done() && steps++ < maxSteps && cost <= costCap) {
+    let t = 0;
+    for (let k = 4; k >= 1; k--) if (need(k)) { t = k; break; }
+    if (mode === "smart") {
+      const act = pickSmart(t);
+      if (act.kind === "fuse") fuse(act.a, act.b);
+      else buy(act.k);
+      continue;
+    }
+    if (t <= buyBase) {
+      buy(t);
+      continue;
+    }
+    if (canFuse(t - 1, t - 1)) {
+      fuse(t - 1, t - 1);
+      continue;
+    }
+    if (t >= 3 && canFuse(t - 1, t - 2)) {
+      fuse(t - 1, t - 2);
+      continue;
+    }
+    let climbed = false;
+    for (let u = t - 1; u > buyBase; u--) {
+      if (canFuse(u, u)) {
+        fuse(u, u);
+        climbed = true;
+        break;
+      }
+      if (u >= 2 && canFuse(u, u - 1)) {
+        fuse(u, u - 1);
+        climbed = true;
+        break;
+      }
+    }
+    if (!climbed) buy(buyBase);
+  }
+
+  return {
+    ok: done(),
+    cost,
+    bought,
+    fuses,
+    fuseN,
+    leftover: [0, available(1), available(2), available(3), available(4)],
+  };
+}
+
+function evaluateEpicSkillPlans(want, trials = 200) {
+  const policies = [
+    { id: "direct", mode: 4, name: "直接生成" },
+    { id: "from3", mode: 3, name: "3史技起步" },
+    { id: "from2", mode: 2, name: "2史技起步" },
+    { id: "from1", mode: 1, name: "1史技爬升" },
+    { id: "smart", mode: "smart", name: "动态选配方" },
+  ];
+  const baseline = simulateEpicSkillPolicy(want, 4, 8, Infinity);
+  const costCap = Number.isFinite(baseline.cost) ? baseline.cost * 1.35 : Infinity;
+  const rows = policies.map((p) => {
+    const nRun = p.mode === 4 ? 1 : trials;
+    const costs = [];
+    const bought = [0, 0, 0, 0, 0];
+    const fuses = {};
+    let fuseN = 0;
+    let leftover = [0, 0, 0, 0, 0];
+    let ok = 0;
+    for (let i = 0; i < nRun; i++) {
+      const one = simulateEpicSkillPolicy(want, p.mode, 8000, p.mode === 4 ? Infinity : costCap);
+      if (!one.ok) continue;
+      ok++;
+      costs.push(one.cost);
+      fuseN += one.fuseN;
+      for (let k = 1; k <= 4; k++) bought[k] += one.bought[k];
+      for (let k = 1; k <= 4; k++) leftover[k] += one.leftover[k];
+      Object.entries(one.fuses).forEach(([key, n]) => {
+        fuses[key] = (fuses[key] || 0) + n;
+      });
+    }
+    costs.sort((a, b) => a - b);
+    const avg = (xs, d = ok || 1) => xs / d;
+    const mean = costs.length ? costs.reduce((s, n) => s + n, 0) / costs.length : Infinity;
+    const mid = costs.length ? costs[Math.floor(costs.length / 2)] : Infinity;
+    return {
+      ...p,
+      ok,
+      trials,
+      mean,
+      mid,
+      bought: bought.map((n) => avg(n)),
+      leftover: leftover.map((n) => avg(n)),
+      fuseN: avg(fuseN),
+      fuses: Object.fromEntries(Object.entries(fuses).map(([k, n]) => [k, avg(n)])),
+    };
+  });
+  rows.sort((a, b) => a.mean - b.mean);
+  return { want, trials, best: rows[0], rows };
+}

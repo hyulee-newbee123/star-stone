@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#07060c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>星源工坊 · 星源石模拟合成器 v2.2</title>
+  <title>星源工坊 · 星源石模拟合成器 v2.3</title>
   <meta name="description" content="星源石合成 / 洗练 / 锤炼模拟器。按官方权重不放回演算概率，公益开源，仅供娱乐。" />
-  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v2.2" />
+  <meta property="og:title" content="星源工坊 · 星源石模拟合成器 v2.3" />
   <meta property="og:description" content="自定义胚子、合成、洗练、锤炼与玉玺演算。非官方模拟器，仅供娱乐。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://hyulee-newbee123.github.io/star-stone/" />
@@ -25,7 +25,7 @@
       <div class="eyebrow">时空秘境 · 星核工坊</div>
       <div class="hero-title">
         <h1>星源石合成器</h1>
-        <span class="ver">v2.2</span>
+        <span class="ver">v2.3</span>
       </div>
       <p class="hero-sub">自定义胚子 · 合成 · 洗练 · 锤炼 · 玉玺演算</p>
       <div class="hero-spent">
@@ -249,6 +249,36 @@
         <button class="btn" id="btn-batch">跑模拟</button>
       </div>
       <div id="calc-out"></div>
+
+      <div class="ai-eval">
+        <h2>AI评测</h2>
+        <p class="hint">只算史诗品质、只算技能攻击力。每种目标填要几颗，多次模拟后按成本给出最合适的合成方案。合成一律用固能环保住史诗技攻。</p>
+        <div class="form-grid ai-goals">
+          <label>1条技能攻击
+            <input type="number" id="ai-want-1" min="0" max="30" value="0" />
+          </label>
+          <label>2条技能攻击
+            <input type="number" id="ai-want-2" min="0" max="30" value="0" />
+          </label>
+          <label>3条技能攻击
+            <input type="number" id="ai-want-3" min="0" max="30" value="0" />
+          </label>
+          <label>4条技能攻击
+            <input type="number" id="ai-want-4" min="0" max="30" value="3" />
+          </label>
+          <label>模拟局数
+            <select id="ai-n">
+              <option value="100">100</option>
+              <option value="200" selected>200</option>
+              <option value="400">400</option>
+            </select>
+          </label>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn gold" id="btn-ai-eval">开始评测</button>
+        </div>
+        <div id="ai-out"></div>
+      </div>
     </section>
 
     <section id="panel-wash" class="panel">
@@ -328,8 +358,8 @@
       <h2>模拟规则</h2>
       <div class="rules">
         <p><b>星尘罐</b>：按 <code>CAN_DROPS</code> 加权开罐，总权重 100，weight 即百分率。支持单开、10 连、100 连、一直开到锤炼之刃。结果弹窗只汇总可交易 / 账号绑定，不逐条列出。本页单独统计各道具数量，不进背包、不计顶栏成本，顶栏「清空」也不影响本页。</p>
-        <p><b>版本更新 · v2.2</b></p>
-        <p>星尘罐改为罐子、汇总、掉落表自上而下排列。完整记录见仓库里的 <code>更新日志.txt</code>。</p>
+        <p><b>版本更新 · v2.3</b></p>
+        <p>演算页增加 AI 评测：只算史诗技攻，按目标颗数给出最佳方案并和直购对照。完整记录见仓库里的 <code>更新日志.txt</code>。</p>
         <p><b>品级槽位</b>：稀有 2 条 · 神器 3 条 · 史诗 4 条。合成结果继承目标石品级与星序。</p>
         <p><b>合成</b>：从目标石与材料石的全部词条组成抽取池，按官方权重不放回抽取到目标石槽位数。同品级时每条均等；不同品级时目标与材料权重不同。同一条来源不会被抽中两次，因此 3 史诗技攻 + 3 史诗技攻不可能出 1 技攻。</p>
         <p><b>合成官方权重</b>：下表为该石上「每一条」在单槽被抽中的公示值（除尽后四舍五入）。抽取和演算会按两石合计 100% 归一，不因四舍五入亏掉或多出一点。</p>

@@ -1105,6 +1105,94 @@ function applyPreset(name) {
   runCalc(true);
 }
 
+function aiWant() {
+  return [0, 1, 2, 3, 4].map((k) => {
+    if (!k) return 0;
+    const n = Number($(`#ai-want-${k}`)?.value);
+    return Number.isFinite(n) ? Math.min(30, Math.max(0, Math.round(n))) : 0;
+  });
+}
+
+function fmtAvg(n) {
+  return String(Math.round(Number(n) || 0));
+}
+
+function describeAiPlan(row) {
+  const buys = [1, 2, 3, 4]
+    .filter((k) => row.bought[k] >= 0.5)
+    .map((k) => `买 ${fmtAvg(row.bought[k])} 颗 ${k}史技`);
+  const fuseKeys = Object.entries(row.fuses)
+    .filter(([, n]) => n >= 0.5)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, n]) => {
+      const [a, b] = key.split("+");
+      return `${a}史技 + ${b}史技 × ${fmtAvg(n)} 次`;
+    });
+  const left = [1, 2, 3, 4]
+    .filter((k) => row.leftover[k] >= 0.5)
+    .map((k) => `${k}史技 ${fmtAvg(row.leftover[k])} 颗`);
+  const parts = [];
+  if (buys.length) parts.push(buys.join("，"));
+  if (fuseKeys.length) parts.push(`固能环合成 ${fuseKeys.join("；")}`);
+  if (!parts.length) return "目标已满足，不用再做。";
+  let text = parts.join("。") + `。平均固能环 ${fmtAvg(row.fuseN)} 次。`;
+  if (left.length) text += ` 额外剩下 ${left.join("、")}。`;
+  return text;
+}
+
+function renderAiEval(report) {
+  const box = $("#ai-out");
+  if (!box) return;
+  const goals = [1, 2, 3, 4]
+    .filter((k) => report.want[k] > 0)
+    .map((k) => `${k}条技能攻击 × ${report.want[k]}`);
+  const best = report.best;
+  const direct = report.rows.find((r) => r.id === "direct");
+  if (!best || !best.ok || !direct) {
+    box.innerHTML = `<div class="odds-card"><div class="hint">这组目标没能在步数上限内凑齐，请把数量调小再试。</div></div>`;
+    return;
+  }
+  const bestCost = Math.round(best.mean);
+  const buyCost = Math.round(direct.mean);
+  const diff = buyCost - bestCost;
+  const diffHint = diff > 0
+    ? `比直购少 ${costYuan(diff)}`
+    : diff < 0
+      ? `比直购多 ${costYuan(-diff)}`
+      : "和直购一样";
+  box.innerHTML = `
+    <div class="odds-card ai-best">
+      <div class="stone-top">
+        <span class="stone-name">合成最佳方案</span>
+        <span class="star-idx">${costYuan(bestCost)}</span>
+      </div>
+      <div class="hint">目标 ${goals.join("，")} · ${diffHint}</div>
+      <p class="ai-plan">${describeAiPlan(best)}</p>
+    </div>
+    <div class="odds-card ai-compare">
+      <div class="stone-top">
+        <span class="stone-name">直购对照</span>
+        <span class="star-idx">${costYuan(buyCost)}</span>
+      </div>
+      <p class="ai-plan">${describeAiPlan(direct)}</p>
+    </div>`;
+}
+
+function runAiEval() {
+  const want = aiWant();
+  const total = want[1] + want[2] + want[3] + want[4];
+  if (!total) return toast("先填至少一种目标数量");
+  sfx("calc");
+  const n = Number($("#ai-n")?.value) || 200;
+  const box = $("#ai-out");
+  if (box) box.innerHTML = `<div class="hint">评测中…</div>`;
+  setTimeout(() => {
+    const report = evaluateEpicSkillPlans(want, n);
+    renderAiEval(report);
+    sfx("sim");
+  }, 30);
+}
+
 function fillSkillSelectsNow() {
   const g = $("#calc-tg").value;
   const slots = GRADE_META[g].slots;
@@ -1382,6 +1470,7 @@ function bind() {
   $("#btn-can-stop")?.addEventListener("click", stopCanRun);
   $("#btn-calc").addEventListener("click", runCalc);
   $("#btn-batch").addEventListener("click", runBatch);
+  $("#btn-ai-eval")?.addEventListener("click", runAiEval);
   $$("[data-clear-bag]").forEach((el) => {
     el.addEventListener("click", () => {
       if (!confirm("清空背包与统计？")) return;
